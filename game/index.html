@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON ABYSS // Roguelike</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Courier New',monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+#top-bar{display:flex;justify-content:space-between;align-items:center;padding:4px 12px;background:#111118;border-bottom:1px solid #2a2a3a;font-size:13px;flex-shrink:0}
+#top-bar .stat{color:#0ff;margin:0 8px}
+#top-bar .hp-bar{display:inline-block;width:120px;height:12px;background:#1a1a2a;border:1px solid #333;vertical-align:middle;position:relative}
+#top-bar .hp-fill{height:100%;background:#0f0;transition:width .3s}
+#top-bar .xp-bar{display:inline-block;width:80px;height:8px;background:#1a1a2a;border:1px solid #333;vertical-align:middle}
+#top-bar .xp-fill{height:100%;background:#ff0;transition:width .3s}
+#main{display:flex;flex:1;overflow:hidden}
+#game-area{flex:1;display:flex;justify-content:center;align-items:center;background:#0a0a0f}
+canvas{image-rendering:pixelated}
+#side-panel{width:260px;background:#111118;border-left:1px solid #2a2a3a;display:flex;flex-direction:column;flex-shrink:0;font-size:12px;overflow:hidden}
+#log{flex:1;overflow-y:auto;padding:6px;border-bottom:1px solid #2a2a3a}
+#log p{margin:2px 0;line-height:1.3}
+#log .dmg{color:#f44}
+#log .heal{color:#0f0}
+#log .info{color:#0ff}
+#log .loot{color:#ff0}
+#log .boss{color:#f0f}
+#log .sarcasm{color:#888;font-style:italic}
+#inv{padding:6px;max-height:40%;overflow-y:auto}
+#inv h3{color:#0ff;margin-bottom:4px;font-size:12px}
+.inv-item{padding:2px 4px;cursor:pointer;border:1px solid transparent;font-size:11px;display:flex;justify-content:space-between}
+.inv-item:hover{border-color:#0ff;background:#1a1a2a}
+.inv-item.equipped{color:#0f0}
+.inv-item .rarity-common{color:#aaa}
+.inv-item .rarity-uncommon{color:#0f0}
+.inv-item .rarity-rare{color:#44f}
+.inv-item .rarity-epic{color:#a0f}
+.inv-item .rarity-legendary{color:#f80}
+#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;justify-content:center;align-items:center;z-index:100;display:none}
+#overlay-content{background:#111118;border:2px solid #0ff;padding:30px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;text-align:center}
+#overlay-content h1{color:#0ff;margin-bottom:15px;font-size:24px}
+#overlay-content h2{color:#f0f;margin:10px 0}
+#overlay-content p{margin:8px 0;line-height:1.4}
+#overlay-content button{background:#0ff;color:#000;border:none;padding:10px 30px;font-family:inherit;font-size:16px;cursor:pointer;margin:10px 5px}
+#overlay-content button:hover{background:#fff}
+#overlay-content .score-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3a}
+#minimap{position:absolute;top:40px;right:270px;border:1px solid #2a2a3a;opacity:.7}
+.controls-hint{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);color:#444;font-size:11px}
+</style>
+</head>
+<body>
+<div id="top-bar">
+  <div>
+    <span>⚔️ <span class="stat" id="s-floor">P1</span></span>
+    <span>❤️ <span class="stat" id="s-hp">50/50</span></span>
+    <span><span class="hp-bar"><span class="hp-fill" id="hp-fill" style="width:100%"></span></span></span>
+    <span>🛡️ <span class="stat" id="s-def">0</span></span>
+  </div>
+  <div>
+    <span>⚡ <span class="stat" id="s-atk">5</span></span>
+    <span>🎯 Lv<span class="stat" id="s-lvl">1</span></span>
+    <span><span class="xp-bar"><span class="xp-fill" id="xp-fill" style="width:0%"></span></span></span>
+    <span>💰 <span class="stat" id="s-gold">0</span></span>
+  </div>
+</div>
+<div id="main">
+  <div id="game-area">
+    <canvas id="c"></canvas>
+    <canvas id="minimap" width="100" height="100"></canvas>
+    <div class="controls-hint">WASD/šipky = pohyb | I = inventář | SPACE = čekej | . = seber | P = lektvar</div>
+  </div>
+  <div id="side-panel">
+    <div id="log"></div>
+    <div id="inv"><h3>📦 INVENTÁŘ</h3></div>
+  </div>
+</div>
+<div id="overlay">
+  <div id="overlay-content"></div>
+</div>
+<script>
+"use strict";
+// ============================================================
+// NEON ABYSS - Cyberpunk Roguelike Dungeon Crawler
+// ============================================================
+
+const TILE = 28;
+const MAP_W = 60, MAP_H = 40;
+const FOV_RADIUS = 8;
+const MAX_FLOOR = 12;
+
+// Tile types
+const T={WALL:0,FLOOR:1,DOOR:2,STAIRS:3,WATER:4,LAVA:5,TRAP:6,CHEST:7,SHRINE:8};
+const TCOLORS={
+  [T.WALL]:'#1a1a2e',[T.FLOOR]:'#16161e',[T.DOOR]:'#553300',
+  [T.STAIRS]:'#00ffff',[T.WATER]:'#001133',[T.LAVA]:'#330500',
+  [T.TRAP]:'#1a1a1e',[T.CHEST]:'#333300',[T.SHRINE]:'#220033'
+};
+
+// Sarcastic messages
+const SARCASTICS = [
+  "Wow, další chodba. Jak originální.",
+  "Tvůj inventář pláče.",
+  "Boss tě sleduje. Asi.",
+  "Tenhle dungeon se sám neprozkoumaá.",
+  "Smrt je jen další learning opportunity.",
+  "V AI startupu by ses neztratil. Tady jo.",
+  "Fitness ti tady nepomůže, ENTJčku.",
+  "Strategie: nezemřít. Skvělý plán.",
+  "Ten potvora vypadá naštvaně. Relatable.",
+  "Loot je droga. Přiznej si to.",
+  "Další patro? Masochista.",
+  "GG EZ... nebo ne.",
+  "Permadeath je feature, ne bug.",
+  "Tvůj meč je tupější než konverzace s GPT-2.",
+];
+const DEATH_MSGS = [
+  "Tak tohle byl epic fail. Zkus to znovu, stratége.",
+  "ENTJ poražen. Universum se směje.",
+  "Tvůj AI startup právě ztratil CEO.",
+  "I Elon by to zvládl líp. Možná.",
+  "Git gud, jak říkají dětičky.",
+  "Dungeon: 1, Bořek: 0.",
+];
+const KILL_MSGS = [
+  "Eliminován s grácií. Nebo aspoň s brutalitou.",
+  "Další oběť tvé strategie.",
+  "Clean kill. Podcast o tom nenatáčej.",
+  "Zničen. Jako tvá konkurence.",
+  "RIP bozo.",
+  "Tenhle to nezvládl.",
+];
+
+// ============== ITEMS ==============
+const RARITY = {COMMON:0,UNCOMMON:1,RARE:2,EPIC:3,LEGENDARY:4};
+const RARITY_NAMES = ['common','uncommon','rare','epic','legendary'];
+const RARITY_MULT = [1, 1.3, 1.7, 2.2, 3];
+const RARITY_COLORS = ['#aaa','#0f0','#44f','#a0f','#f80'];
+
+const WEAPON_TEMPLATES = [
+  {name:'Rezavý nůž',atk:3,desc:'Tetanus zdarma.',sprite:'🗡️'},
+  {name:'Neonový meč',atk:6,desc:'Svítí ve tmě. Nepraktické.',sprite:'⚔️'},
+  {name:'Plazmová katana',atk:9,desc:'Weeb approved.',sprite:'🔪'},
+  {name:'Kybernetická sekera',atk:12,desc:'Pro ty, co preferují brute force.',sprite:'🪓'},
+  {name:'Railgun pistole',atk:15,desc:'Pew pew, ale vážně.',sprite:'🔫'},
+  {name:'Kvantový halberd',atk:18,desc:'Existuje ve dvou stavech najednou.',sprite:'🔱'},
+  {name:'Void Blade',atk:22,desc:'Řeže skrz realitu.',sprite:'⚔️'},
+  {name:'Nanobičík',atk:10,crit:20,desc:'Kinky a efektivní.',sprite:'🪢'},
+  {name:'EMP kladivo',atk:14,stun:30,desc:'Thor by záviděl.',sprite:'🔨'},
+  {name:'Disruptor',atk:20,pierce:50,desc:'Ignoruje pravidla. Jako ty.',sprite:'💎'},
+];
+
+const ARMOR_TEMPLATES = [
+  {name:'Kožená vesta',def:2,desc:'Lepší než nic. Marginálně.',sprite:'🧥'},
+  {name:'Kevlarový plášť',def:4,desc:'Módní policie schvaluje.',sprite:'🧥'},
+  {name:'Nanoweave brnění',def:7,desc:'Hi-tech hadr.',sprite:'🛡️'},
+  {name:'Titanový exoskelet',def:10,desc:'Gym už nepotřebuješ.',sprite:'🦾'},
+  {name:'Plazmový štít',def:13,desc:'Blokuje 90% útoků. Zbylých 10% bolí.',sprite:'🛡️'},
+  {name:'Void Armor',def:16,desc:'Absorbuje realitu.',sprite:'🛡️'},
+  {name:'Quantum Plate',def:20,hpBonus:20,desc:'Schrödingerova ochrana.',sprite:'🛡️'},
+];
+
+const POTION_TEMPLATES = [
+  {name:'Léčivý lektvar',heal:25,desc:'Chutná jak Redbull po expiraci.',sprite:'🧪'},
+  {name:'Velký léčivý lektvar',heal:50,desc:'Jako malý, ale víc.',sprite:'🧪'},
+  {name:'Elixír síly',atkBuff:5,duration:20,desc:'Dočasně jsi méně slabý.',sprite:'⚗️'},
+  {name:'Elixír odolnosti',defBuff:5,duration:20,desc:'Tvrdší než tvůj ego.',sprite:'⚗️'},
+  {name:'Elixír rychlosti',spdBuff:2,duration:15,desc:'Gotta go fast.',sprite:'💨'},
+  {name:'Plný regenerák',healFull:true,desc:'Jako reset, ale pro HP.',sprite:'❤️‍🔥'},
+  {name:'Elixír XP',xpGain:50,desc:'Zkušenosti z lahve. Budoucnost.',sprite:'⭐'},
+];
+
+const SPECIAL_ITEMS = [
+  {name:'Teleportační krystal',type:'teleport',charges:3,desc:'Náhodný teleport. YOLO.',sprite:'💎'},
+  {name:'Mapa patra',type:'reveal',charges:1,desc:'Odkryje celé patro. Cheat? Feature.',sprite:'🗺️'},
+  {name:'Bomba',type:'bomb',charges:2,dmg:30,desc:'Boom. Jednoduchý.',sprite:'💣'},
+  {name:'Amulet oživení',type:'revive',charges:1,desc:'Jeden extra život. Nedej ho za blbost.',sprite:'💀'},
+];
+
+// ============== ENEMIES ==============
+const ENEMY_TEMPLATES = [
+  {name:'Glitch Rat',hp:12,atk:3,def:0,xp:5,gold:2,sprite:'🐀',color:'#666',ai:'basic',desc:'Bugged existence.'},
+  {name:'Neon Slime',hp:18,atk:4,def:1,xp:8,gold:3,sprite:'🟢',color:'#0f0',ai:'basic',desc:'Lepivý a otravný.'},
+  {name:'Cyber Zombie',hp:25,atk:6,def:2,xp:12,gold:5,sprite:'🧟',color:'#4a4',ai:'basic',desc:'Mozek nenašel. Útočí dál.'},
+  {name:'Drone Scout',hp:15,atk:8,def:1,xp:10,gold:4,sprite:'🤖',color:'#aaf',ai:'ranged',range:4,desc:'Pew pew z dálky.'},
+  {name:'Shadow Hacker',hp:20,atk:7,def:2,xp:15,gold:8,sprite:'👤',color:'#808',ai:'teleport',desc:'Teleportuje se. Frustrující.'},
+  {name:'Plasma Golem',hp:40,atk:9,def:5,xp:20,gold:10,sprite:'🗿',color:'#f80',ai:'slow',desc:'Pomalý ale devastující.'},
+  {name:'Virus Swarm',hp:10,atk:5,def:0,xp:6,gold:2,sprite:'🦠',color:'#0f0',ai:'swarm',desc:'Kde je jeden, jsou další.'},
+  {name:'Mech Knight',hp:35,atk:10,def:6,xp:18,gold:8,sprite:'🤺',color:'#88f',ai:'patrol',desc:'Rytíř v kovu. Klasika.'},
+  {name:'Acid Spider',hp:22,atk:7,def:1,xp:12,gold:5,sprite:'🕷️',color:'#af0',ai:'basic',poison:3,desc:'Jedovatý kousanec. Fuj.'},
+  {name:'Firewall Demon',hp:30,atk:11,def:3,xp:22,gold:12,sprite:'👹',color:'#f44',ai:'aggressive',desc:'Agresivní a naštvaný. Pořád.'},
+  {name:'Data Wraith',hp:28,atk:9,def:2,xp:16,gold:7,sprite:'👻',color:'#aaf',ai:'phase',desc:'Prochází zdmi. Nefér.'},
+  {name:'Turret',hp:25,atk:12,def:8,xp:14,gold:6,sprite:'🔫',color:'#ff0',ai:'stationary',range:5,desc:'Nepohybuje se. Střílí.'},
+  {name:'Electro Mage',hp:24,atk:13,def:2,xp:20,gold:10,sprite:'🧙',color:'#ff0',ai:'ranged',range:3,desc:'Blesky z rukou.'},
+  {name:'Berserker Bot',hp:45,atk:14,def:3,xp:25,gold:12,sprite:'🦿',color:'#f44',ai:'berserk',desc:'Čím víc zraněný, tím silnější.'},
+  {name:'Mimic',hp:30,atk:10,def:4,xp:20,gold:20,sprite:'📦',color:'#ff0',ai:'ambush',desc:'Překvapení! Truhla žije.'},
+  {name:'Corrupted AI',hp:35,atk:12,def:4,xp:28,gold:15,sprite:'🤖',color:'#f0f',ai:'smart',desc:'Tvůj startup competitor.'},
+  {name:'Void Stalker',hp:50,atk:15,def:5,xp:35,gold:18,sprite:'🌑',color:'#a0f',ai:'aggressive',desc:'Lovci z void prostoru.'},
+];
+
+const BOSS_TEMPLATES = [
+  {name:'KERNEL PANIC',hp:80,atk:12,def:5,xp:50,gold:30,sprite:'💀',color:'#f00',ai:'boss_charge',desc:'Blue screen of death. Doslova.'},
+  {name:'OVERFLOW',hp:100,atk:14,def:6,xp:60,gold:40,sprite:'🌊',color:'#00f',ai:'boss_summon',desc:'Buffer overflow? Spíš monster overflow.'},
+  {name:'ROOTKIT',hp:120,atk:16,def:7,xp:75,gold:50,sprite:'🌳',color:'#0a0',ai:'boss_phase',desc:'Root access k tvé smrti.'},
+  {name:'MALWARE QUEEN',hp:140,atk:18,def:8,xp:90,gold:60,sprite:'👑',color:'#f0f',ai:'boss_summon',desc:'Královna virů. Antivirák nepomůže.'},
+  {name:'ZERO DAY',hp:160,atk:20,def:9,xp:100,gold:70,sprite:'☠️',color:'#ff0',ai:'boss_charge',desc:'Exploit, na který neexistuje patch.'},
+  {name:'THE SINGULARITY',hp:200,atk:22,def:10,xp:120,gold:80,sprite:'🕳️',color:'#fff',ai:'boss_phase',desc:'AGI dosaženo. A je naštvaná.'},
+  {name:'DEADLOCK',hp:180,atk:19,def:12,xp:110,gold:75,sprite:'🔒',color:'#f80',ai:'boss_charge',desc:'Nikdo neodchází. Nikdy.'},
+  {name:'SEGFAULT',hp:220,atk:24,def:11,xp:140,gold:90,sprite:'💥',color:'#f44',ai:'boss_summon',desc:'Segmentation fault: core dumped.'},
+  {name:'ENTROPY',hp:250,atk:26,def:12,xp:160,gold:100,sprite:'🌀',color:'#a0f',ai:'boss_phase',desc:'Konec všeho. Literally.'},
+  {name:'NULL POINTER',hp:150,atk:17,def:8,xp:85,gold:55,sprite:'❓',color:'#aaa',ai:'boss_charge',desc:'Reference na nic. Nic tě zabije.'},
+  {name:'STACK OVERFLOW',hp:190,atk:21,def:9,xp:115,gold:70,sprite:'📚',color:'#f80',ai:'boss_summon',desc:'Too many recursive calls to existence.'},
+  {name:'FINAL BOSS: DEPRECATED',hp:350,atk:30,def:15,xp:300,gold:200,sprite:'⚡',color:'#ff0',ai:'boss_phase',desc:'Zastaralý, ale smrtící. Jako COBOL.'},
+];
+
+// ============== GAME STATE ==============
+let G = null; // game state
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const mmCanvas = document.getElementById('minimap');
+const mmCtx = mmCanvas.getContext('2d');
+const logEl = document.getElementById('log');
+const invEl = document.getElementById('inv');
+const overlay = document.getElementById('overlay');
+const overlayContent = document.getElementById('overlay-content');
+
+function rng(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function pick(arr){return arr[rng(0,arr.length-1)]}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+function dist(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y)}
+
+// ============== MAP GENERATION ==============
+function genMap(floor){
+  let map = Array.from({length:MAP_H},()=>Array(MAP_W).fill(T.WALL));
+  let rooms = [];
+  let attempts = 0;
+  const roomCount = rng(8,14);
+  
+  while(rooms.length < roomCount && attempts < 500){
+    attempts++;
+    let w = rng(4,10), h = rng(4,8);
+    let x = rng(1,MAP_W-w-1), y = rng(1,MAP_H-h-1);
+    let overlap = false;
+    for(let r of rooms){
+      if(x-1<r.x+r.w && x+w+1>r.x && y-1<r.y+r.h && y+h+1>r.y){overlap=true;break}
+    }
+    if(!overlap){
+      rooms.push({x,y,w,h});
+      for(let ry=y;ry<y+h;ry++)for(let rx=x;rx<x+w;rx++) map[ry][rx]=T.FLOOR;
+    }
+  }
+  
+  // Connect rooms with corridors
+  for(let i=1;i<rooms.length;i++){
+    let a={x:Math.floor(rooms[i-1].x+rooms[i-1].w/2),y:Math.floor(rooms[i-1].y+rooms[i-1].h/2)};
+    let b={x:Math.floor(rooms[i].x+rooms[i].w/2),y:Math.floor(rooms[i].y+rooms[i].h/2)};
+    let cx=a.x, cy=a.y;
+    while(cx!==b.x){map[cy][cx]=T.FLOOR;cx+=cx<b.x?1:-1;}
+    while(cy!==b.y){map[cy][cx]=T.FLOOR;cy+=cy<b.y?1:-1;}
+    map[cy][cx]=T.FLOOR;
+    // Place doors at corridor-room intersections sometimes
+    if(Math.random()<0.3) map[a.y][a.x]=T.DOOR;
+  }
+  
+  // Place stairs in last room
+  let lastRoom = rooms[rooms.length-1];
+  let stairX = rng(lastRoom.x+1,lastRoom.x+lastRoom.w-2);
+  let stairY = rng(lastRoom.y+1,lastRoom.y+lastRoom.h-2);
+  map[stairY][stairX] = T.STAIRS;
+  
+  // Place traps
+  let trapCount = rng(3,6+floor);
+  for(let i=0;i<trapCount;i++){
+    let r=pick(rooms);
+    let tx=rng(r.x,r.x+r.w-1),ty=rng(r.y,r.y+r.h-1);
+    if(map[ty][tx]===T.FLOOR) map[ty][tx]=T.TRAP;
+  }
+  
+  // Place chests
+  let chestCount = rng(1,3);
+  for(let i=0;i<chestCount;i++){
+    let r=pick(rooms);
+    let cx2=rng(r.x,r.x+r.w-1),cy2=rng(r.y,r.y+r.h-1);
+    if(map[cy2][cx2]===T.FLOOR) map[cy2][cx2]=T.CHEST;
+  }
+  
+  // Shrine (rare)
+  if(Math.random()<0.3){
+    let r=pick(rooms);
+    let sx=rng(r.x,r.x+r.w-1),sy=rng(r.y,r.y+r.h-1);
+    if(map[sy][sx]===T.FLOOR) map[sy][sx]=T.SHRINE;
+  }
+  
+  // Water/lava pools on later floors
+  if(floor>3){
+    let poolCount=rng(1,3);
+    for(let p=0;p<poolCount;p++){
+      let r=pick(rooms);
+      let px=rng(r.x+1,r.x+r.w-2),py=rng(r.y+1,r.y+r.h-2);
+      let ptype=floor>6?T.LAVA:T.WATER;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(py+dy>0&&py+dy<MAP_H-1&&px+dx>0&&px+dx<MAP_W-1&&map[py+dy][px+dx]===T.FLOOR&&Math.random()<0.6)
+          map[py+dy][px+dx]=ptype;
+      }
+    }
+  }
+  
+  // Player start in first room
+  let firstRoom = rooms[0];
+  let startX = Math.floor(firstRoom.x+firstRoom.w/2);
+  let startY = Math.floor(firstRoom.y+firstRoom.h/2);
+  
+  return {map, rooms, startX, startY, stairX, stairY};
+}
+
+// ============== ENEMY GENERATION ==============
+function spawnEnemies(floor, rooms, map, px, py){
+  let enemies = [];
+  let count = rng(6,10) + floor*2;
+  let available = ENEMY_TEMPLATES.filter((_,i) => i <= Math.min(floor*2, ENEMY_TEMPLATES.length-1));
+  
+  for(let i=0;i<count;i++){
+    let r = pick(rooms);
+    let ex=rng(r.x,r.x+r.w-1), ey=rng(r.y,r.y+r.h-1);
+    if(map[ey][ex]!==T.FLOOR && map[ey][ex]!==T.TRAP) continue;
+    if(Math.abs(ex-px)<3 && Math.abs(ey-py)<3) continue;
+    if(enemies.some(e=>e.x===ex&&e.y===ey)) continue;
+    
+    let tmpl = pick(available);
+    let scale = 1 + (floor-1)*0.15;
+    enemies.push({
+      ...tmpl,
+      hp:Math.floor(tmpl.hp*scale),
+      maxHp:Math.floor(tmpl.hp*scale),
+      atk:Math.floor(tmpl.atk*scale),
+      def:Math.floor(tmpl.def*scale),
+      xp:Math.floor(tmpl.xp*scale),
+      gold:Math.floor(tmpl.gold*scale),
+      x:ex, y:ey, isBoss:false, stunned:0, poisonTurns:0
+    });
+  }
+  
+  // Boss in room near stairs
+  if(floor <= BOSS_TEMPLATES.length){
+    let boss = {...BOSS_TEMPLATES[floor-1]};
+    let bossRoom = rooms[rooms.length-1];
+    let bx = Math.floor(bossRoom.x+bossRoom.w/2);
+    let by = Math.floor(bossRoom.y+bossRoom.h/2);
+    let scale = 1 + (floor-1)*0.12;
+    enemies.push({
+      ...boss,
+      hp:Math.floor(boss.hp*scale),
+      maxHp:Math.floor(boss.hp*scale),
+      atk:Math.floor(boss.atk*scale),
+      def:Math.floor(boss.def*scale),
+      xp:Math.floor(boss.xp*scale),
+      gold:Math.floor(boss.gold*scale),
+      x:bx, y:by, isBoss:true, stunned:0, poisonTurns:0
+    });
+  }
+  
+  return enemies;
+}
+
+// ============== ITEMS ==============
+function genItem(floor, forceType){
+  let type = forceType || pick(['weapon','weapon','armor','potion','potion','potion','special']);
+  let rarity = RARITY.COMMON;
+  let roll = Math.random();
+  if(roll<0.05+floor*0.01) rarity=RARITY.LEGENDARY;
+  else if(roll<0.15+floor*0.02) rarity=RARITY.EPIC;
+  else if(roll<0.30+floor*0.02) rarity=RARITY.RARE;
+  else if(roll<0.55) rarity=RARITY.UNCOMMON;
+  
+  let mult = RARITY_MULT[rarity];
+  let item;
+  
+  if(type==='weapon'){
+    let avail = WEAPON_TEMPLATES.filter((_,i)=>i<=Math.min(2+floor,WEAPON_TEMPLATES.length-1));
+    let tmpl = pick(avail);
+    item = {...tmpl, type:'weapon', rarity, atk:Math.floor(tmpl.atk*mult)};
+    if(tmpl.crit) item.crit = Math.floor(tmpl.crit*mult);
+    if(tmpl.stun) item.stun = Math.floor(tmpl.stun*mult);
+    if(tmpl.pierce) item.pierce = Math.floor(tmpl.pierce*mult);
+  } else if(type==='armor'){
+    let avail = ARMOR_TEMPLATES.filter((_,i)=>i<=Math.min(1+floor,ARMOR_TEMPLATES.length-1));
+    let tmpl = pick(avail);
+    item = {...tmpl, type:'armor', rarity, def:Math.floor(tmpl.def*mult)};
+    if(tmpl.hpBonus) item.hpBonus = Math.floor(tmpl.hpBonus*mult);
+  } else if(type==='potion'){
+    let tmpl = pick(POTION_TEMPLATES);
+    item = {...tmpl, type:'potion', rarity:RARITY.COMMON};
+    if(item.heal) item.heal = Math.floor(item.heal * (1+floor*0.1));
+    if(item.xpGain) item.xpGain = Math.floor(item.xpGain * (1+floor*0.15));
+  } else {
+    let tmpl = pick(SPECIAL_ITEMS);
+    item = {...tmpl, rarity:RARITY.RARE};
+  }
+  
+  if(rarity>=RARITY.RARE && (type==='weapon'||type==='armor')){
+    let prefixes = ['Glitched','Overclocked','Void-touched','Quantum','Nano-enhanced'];
+    item.name = pick(prefixes)+' '+item.name;
+  }
+  
+  item.id = Math.random().toString(36).substr(2,9);
+  return item;
+}
+
+// ============== DROP ITEMS ON MAP ==============
+function spawnGroundItems(floor, rooms, map, enemies){
+  let items = [];
+  let count = rng(3,6);
+  for(let i=0;i<count;i++){
+    let r = pick(rooms);
+    let ix=rng(r.x,r.x+r.w-1), iy=rng(r.y,r.y+r.h-1);
+    if(map[iy][ix]===T.FLOOR && !enemies.some(e=>e.x===ix&&e.y===iy)){
+      items.push({...genItem(floor), x:ix, y:iy});
+    }
+  }
+  // Always a potion or two
+  for(let i=0;i<2;i++){
+    let r = pick(rooms);
+    let ix=rng(r.x,r.x+r.w-1), iy=rng(r.y,r.y+r.h-1);
+    if(map[iy][ix]===T.FLOOR){
+      items.push({...genItem(floor,'potion'), x:ix, y:iy});
+    }
+  }
+  return items;
+}
+
+// ============== FOV ==============
+function computeFOV(map, px, py, radius, seen){
+  // Simple raycasting FOV
+  for(let a=0;a<360;a+=1){
+    let rad = a*Math.PI/180;
+    let dx = Math.cos(rad)*0.5;
+    let dy = Math.sin(rad)*0.5;
+    let x=px+0.5, y=py+0.5;
+    for(let d=0;d<radius;d++){
+      let tx=Math.floor(x), ty=Math.floor(y);
+      if(tx<0||tx>=MAP_W||ty<0||ty>=MAP_H) break;
+      seen[ty][tx] = 2; // visible
+      if(map[ty][tx]===T.WALL) break;
+      x+=dx; y+=dy;
+    }
+  }
+}
+
+// ============== INIT GAME ==============
+function initGame(){
+  G = {
+    floor: 1,
+    player: {x:0,y:0,hp:60,maxHp:60,atk:5,def:0,lvl:1,xp:0,xpNext:20,gold:0,
+             weapon:null,armor:null,inventory:[],buffs:[],poisonTurns:0,kills:0,turns:0},
+    map:null, enemies:[], groundItems:[], seen:null,
+    messages:[], gameOver:false, won:false,
+    animQueue:[], shakeTimer:0
+  };
+  
+  // Give starter weapon
+  let starter = {name:'Rezavá trubka',type:'weapon',atk:3,rarity:RARITY.COMMON,
+                 desc:'Lepší než pěsti. Marginálně.',sprite:'🔧',id:'start'};
+  G.player.weapon = starter;
+  G.player.inventory.push(starter);
+  
+  enterFloor(1);
+  log('info','═══ NEON ABYSS ═══');
+  log('sarcasm','Vítej v dungeonu, stratége. Pokus se nezemřít.');
+  log('info','WASD/šipky = pohyb | I = inventář | SPACE = čekej | . = seber | P = lektvar');
+}
+
+function enterFloor(floor){
+  G.floor = floor;
+  let {map, rooms, startX, startY} = genMap(floor);
+  G.map = map;
+  G.player.x = startX;
+  G.player.y = startY;
+  G.seen = Array.from({length:MAP_H},()=>Array(MAP_W).fill(0));
+  G.enemies = spawnEnemies(floor, rooms, map, startX, startY);
+  G.groundItems = spawnGroundItems(floor, rooms, map, G.enemies);
+  
+  computeFOV(map, startX, startY, FOV_RADIUS, G.seen);
+  
+  log('info',`═══ PATRO ${floor} ═══`);
+  if(floor>1) log('sarcasm', pick(SARCASTICS));
+  
+  let boss = G.enemies.find(e=>e.isBoss);
+  if(boss) log('boss',`Boss tohoto patra: ${boss.name}`);
+}
+
+// ============== LOGGING ==============
+function log(cls, msg){
+  G.messages.push({cls,msg});
+  let p = document.createElement('p');
+  p.className = cls;
+  p.textContent = msg;
+  logEl.appendChild(p);
+  logEl.scrollTop = logEl.scrollHeight;
+  // Keep last 200
+  while(logEl.children.length > 200) logEl.removeChild(logEl.firstChild);
+}
+
+// ============== COMBAT ==============
+function playerAttack(enemy){
+  let p = G.player;
+  let totalAtk = p.atk + (p.weapon ? p.weapon.atk : 0);
+  // Buffs
+  for(let b of p.buffs) if(b.atkBuff) totalAtk += b.atkBuff;
+  
+  let crit = false;
+  let critChance = p.weapon && p.weapon.crit ? p.weapon.crit : 5;
+  if(Math.random()*100 < critChance){crit=true; totalAtk=Math.floor(totalAtk*1.8);}
+  
+  let pierce = p.weapon && p.weapon.pierce ? p.weapon.pierce/100 : 0;
+  let effectiveDef = Math.floor(enemy.def * (1-pierce));
+  let dmg = Math.max(1, totalAtk - effectiveDef + rng(-1,2));
+  
+  if(p.weapon && p.weapon.stun && Math.random()*100 < p.weapon.stun){
+    enemy.stunned = 2;
+    log('info',`${enemy.name} je omráčen!`);
+  }
+  
+  enemy.hp -= dmg;
+  log('dmg',`Útočíš na ${enemy.name}: ${dmg} dmg${crit?' 💥CRIT!':''}`);
+  G.shakeTimer = 3;
+  
+  if(enemy.hp <= 0){
+    log('loot',`${enemy.name} ${enemy.isBoss?'💀 ':''}poražen! +${enemy.xp}xp +${enemy.gold}g`);
+    log('sarcasm', pick(KILL_MSGS));
+    p.xp += enemy.xp;
+    p.gold += enemy.gold;
+    p.kills++;
+    
+    // Drop loot
+    if(Math.random() < (enemy.isBoss ? 1 : 0.35)){
+      let item = genItem(G.floor);
+      if(enemy.isBoss) item.rarity = Math.max(item.rarity, RARITY.RARE);
+      item.x = enemy.x; item.y = enemy.y;
+      G.groundItems.push(item);
+      log('loot',`${enemy.name} dropnul: ${item.name}!`);
+    }
+    
+    G.enemies = G.enemies.filter(e=>e!==enemy);
+    checkLevelUp();
+    return;
+  }
+}
+
+function enemyAttack(enemy){
+  let p = G.player;
+  if(enemy.stunned>0){enemy.stunned--;log('info',`${enemy.name} je omráčen a nemůže útočit.`);return;}
+  
+  let totalDef = p.def + (p.armor ? p.armor.def : 0);
+  for(let b of p.buffs) if(b.defBuff) totalDef += b.defBuff;
+  
+  let atkVal = enemy.atk;
+  // Berserk enemies get stronger when low HP
+  if(enemy.ai==='berserk' && enemy.hp < enemy.maxHp*0.5) atkVal = Math.floor(atkVal*1.5);
+  
+  let dmg = Math.max(1, atkVal - totalDef + rng(-1,2));
+  p.hp -= dmg;
+  log('dmg',`${enemy.name} útočí: ${dmg} dmg`);
+  
+  // Poison
+  if(enemy.poison && Math.random()<0.4){
+    p.poisonTurns = Math.max(p.poisonTurns, enemy.poison);
+    log('dmg','Jsi otráven! 🤢');
+  }
+  
+  G.shakeTimer = 5;
+  
+  if(p.hp <= 0){
+    gameOver();
+  }
+}
+
+function checkLevelUp(){
+  let p = G.player;
+  while(p.xp >= p.xpNext){
+    p.xp -= p.xpNext;
+    p.lvl++;
+    p.xpNext = Math.floor(p.xpNext * 1.5);
+    p.maxHp += 8;
+    p.hp = Math.min(p.hp + 15, p.maxHp);
+    p.atk += 2;
+    p.def += 1;
+    log('info',`⬆️ LEVEL UP! Lv${p.lvl} | HP+8 ATK+2 DEF+1`);
+    log('sarcasm','Progression! Dopamin! Skvělé.');
+  }
+}
+
+// ============== ENEMY AI ==============
+function moveEnemies(){
+  let p = G.player;
+  for(let e of G.enemies){
+    if(e.stunned>0){e.stunned--;continue;}
+    
+    let d = dist(e, p);
+    
+    // Check if enemy can see player (simplified)
+    if(G.seen[e.y][e.x] < 2 && d > 6) continue; // Only act if player visible or close
+    
+    // Ranged attack
+    if(e.ai==='ranged' && e.range && d <= e.range && d > 1){
+      if(hasLineOfSight(e,p)){
+        let dmg = Math.max(1, e.atk - (p.def+(p.armor?p.armor.def:0)) + rng(-1,1));
+        p.hp -= dmg;
+        log('dmg',`${e.name} střílí z dálky: ${dmg} dmg`);
+        G.shakeTimer = 3;
+        if(p.hp<=0) gameOver();
+        continue;
+      }
+    }
+    
+    if(e.ai==='stationary'){
+      if(e.range && d <= e.range && hasLineOfSight(e,p)){
+        let dmg = Math.max(1, e.atk - (p.def+(p.armor?p.armor.def:0)) + rng(-1,1));
+        p.hp -= dmg;
+        log('dmg',`${e.name} střílí: ${dmg} dmg`);
+        G.shakeTimer = 3;
+        if(p.hp<=0) gameOver();
+      }
+      continue;
+    }
+    
+    // Adjacent - melee attack
+    if(d === 1){
+      enemyAttack(e);
+      continue;
+    }
+    
+    // Movement AI
+    if(d > 10 && e.ai!=='aggressive') continue; // Too far, ignore
+    
+    // Teleport AI
+    if(e.ai==='teleport' && d < 6 && Math.random()<0.3){
+      let nx=p.x+rng(-2,2), ny=p.y+rng(-2,2);
+      if(nx>=0&&nx<MAP_W&&ny>=0&&ny<MAP_H&&G.map[ny][nx]===T.FLOOR&&!G.enemies.some(e2=>e2.x===nx&&e2.y===ny)){
+        e.x=nx;e.y=ny;
+      }
+      continue;
+    }
+    
+    // Phase AI (walk through walls)
+    if(e.ai==='phase'){
+      moveToward(e, p, true);
+      continue;
+    }
+    
+    // Boss: summon minions
+    if(e.ai==='boss_summon' && Math.random()<0.15 && G.enemies.length<30){
+      let avail = ENEMY_TEMPLATES.filter((_,i)=>i<=G.floor);
+      let minion = pick(avail);
+      let mx=e.x+rng(-2,2),my=e.y+rng(-2,2);
+      if(mx>=0&&mx<MAP_W&&my>=0&&my<MAP_H&&G.map[my][mx]===T.FLOOR&&!G.enemies.some(e2=>e2.x===mx&&e2.y===my)){
+        G.enemies.push({...minion,hp:minion.hp,maxHp:minion.hp,x:mx,y:my,isBoss:false,stunned:0,poisonTurns:0});
+        log('boss',`${e.name} přivolal ${minion.name}!`);
+      }
+    }
+    
+    // Boss: charge
+    if(e.ai==='boss_charge' && d<=5 && Math.random()<0.2){
+      // Move 2 spaces toward player
+      moveToward(e, p, false);
+      moveToward(e, p, false);
+      if(dist(e,p)===1) enemyAttack(e);
+      continue;
+    }
+    
+    // Boss: phase (teleport near player)
+    if(e.ai==='boss_phase' && Math.random()<0.15){
+      let nx=p.x+rng(-2,2),ny=p.y+rng(-2,2);
+      if(nx>=0&&nx<MAP_W&&ny>=0&&ny<MAP_H&&G.map[ny][nx]===T.FLOOR){
+        e.x=nx;e.y=ny;
+        log('boss',`${e.name} se teleportoval!`);
+      }
+      continue;
+    }
+    
+    // Default: move toward player
+    if(d <= 8){
+      moveToward(e, p, false);
+    }
+  }
+}
+
+function moveToward(e, target, phaseThrough){
+  let dx = Math.sign(target.x - e.x);
+  let dy = Math.sign(target.y - e.y);
+  
+  // Try horizontal or vertical (randomize priority)
+  let moves = Math.random()<0.5 ? [[dx,0],[0,dy]] : [[0,dy],[dx,0]];
+  
+  for(let [mx,my] of moves){
+    if(mx===0&&my===0) continue;
+    let nx=e.x+mx, ny=e.y+my;
+    if(nx<0||nx>=MAP_W||ny<0||ny>=MAP_H) continue;
+    if(!phaseThrough && G.map[ny][nx]===T.WALL) continue;
+    if(G.enemies.some(e2=>e2!==e&&e2.x===nx&&e2.y===ny)) continue;
+    if(nx===G.player.x && ny===G.player.y) continue;
+    e.x=nx; e.y=ny;
+    return;
+  }
+}
+
+function hasLineOfSight(a,b){
+  let dx=b.x-a.x, dy=b.y-a.y;
+  let steps=Math.max(Math.abs(dx),Math.abs(dy));
+  for(let i=1;i<steps;i++){
+    let x=Math.round(a.x+dx*i/steps);
+    let y=Math.round(a.y+dy*i/steps);
+    if(G.map[y][x]===T.WALL) return false;
+  }
+  return true;
+}
+
+// ============== PLAYER ACTION ==============
+function tryMove(dx,dy){
+  if(G.gameOver) return;
+  let p = G.player;
+  let nx=p.x+dx, ny=p.y+dy;
+  if(nx<0||nx>=MAP_W||ny<0||ny>=MAP_H) return;
+  if(G.map[ny][nx]===T.WALL) return;
+  
+  // Check enemy
+  let enemy = G.enemies.find(e=>e.x===nx&&e.y===ny);
+  if(enemy){
+    playerAttack(enemy);
+    endTurn();
+    return;
+  }
+  
+  p.x=nx; p.y=ny;
+  
+  // Tile effects
+  let tile = G.map[ny][nx];
+  if(tile===T.TRAP){
+    let dmg = rng(3,8+G.floor*2);
+    p.hp -= dmg;
+    log('dmg',`Šlápl jsi do pasti! -${dmg} HP`);
+    log('sarcasm','Pozor kam šlapeš, génie.');
+    G.map[ny][nx] = T.FLOOR;
+    G.shakeTimer = 4;
+    if(p.hp<=0){gameOver();return;}
+  }
+  if(tile===T.WATER){
+    // Slow (skip turn)
+    log('info','Brouzdáš vodou. Zpomalení.');
+  }
+  if(tile===T.LAVA){
+    let dmg = rng(5,10+G.floor);
+    p.hp -= dmg;
+    log('dmg',`Láva! -${dmg} HP. Aua.`);
+    if(p.hp<=0){gameOver();return;}
+  }
+  if(tile===T.STAIRS){
+    if(G.floor >= MAX_FLOOR){
+      wonGame();
+      return;
+    }
+    log('info','Scházíš po schodech dolů...');
+    enterFloor(G.floor+1);
+    render();
+    return;
+  }
+  if(tile===T.CHEST){
+    let item = genItem(G.floor);
+    item.rarity = Math.max(item.rarity, RARITY.UNCOMMON);
+    log('loot',`Truhla! Našel jsi: ${item.name} (${RARITY_NAMES[item.rarity]})`);
+    addToInventory(item);
+    G.map[ny][nx] = T.FLOOR;
+  }
+  if(tile===T.SHRINE){
+    let choice = rng(0,2);
+    if(choice===0){p.maxHp+=10;p.hp=Math.min(p.hp+10,p.maxHp);log('heal','Svatyně síly! MaxHP +10');}
+    else if(choice===1){p.atk+=3;log('info','Svatyně moci! ATK +3');}
+    else{p.def+=2;log('info','Svatyně odolnosti! DEF +2');}
+    log('sarcasm','Free buffs. Podezřelé, ale OK.');
+    G.map[ny][nx] = T.FLOOR;
+  }
+  
+  endTurn();
+}
+
+function endTurn(){
+  let p = G.player;
+  p.turns++;
+  
+  // Poison tick
+  if(p.poisonTurns>0){
+    let pdmg = rng(2,4);
+    p.hp -= pdmg;
+    p.poisonTurns--;
+    log('dmg',`Jed: -${pdmg} HP (${p.poisonTurns} tur zbývá)`);
+    if(p.hp<=0){gameOver();return;}
+  }
+  
+  // Buff ticks
+  p.buffs = p.buffs.filter(b=>{b.duration--;return b.duration>0;});
+  
+  // Enemy turns
+  moveEnemies();
+  
+  // Recompute FOV
+  // Mark old visible as "seen but not visible"
+  for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++) if(G.seen[y][x]===2) G.seen[y][x]=1;
+  computeFOV(G.map, p.x, p.y, FOV_RADIUS, G.seen);
+  
+  render();
+}
+
+function pickupItem(){
+  let p = G.player;
+  let items = G.groundItems.filter(i=>i.x===p.x&&i.y===p.y);
+  if(items.length===0){log('info','Nic tu neleží.');return;}
+  for(let item of items){
+    addToInventory(item);
+    log('loot',`Sebral jsi: ${item.name}`);
+  }
+  G.groundItems = G.groundItems.filter(i=>!(i.x===p.x&&i.y===p.y));
+  render();
+}
+
+function addToInventory(item){
+  if(G.player.inventory.length >= 20){
+    log('info','Inventář plný! Zahoď něco.');
+    return;
+  }
+  G.player.inventory.push(item);
+  renderInventory();
+}
+
+function useItem(item){
+  let p = G.player;
+  if(item.type==='weapon'){
+    if(p.weapon) p.weapon = item;
+    else p.weapon = item;
+    log('info',`Vybaveno: ${item.name} (ATK ${item.atk})`);
+  } else if(item.type==='armor'){
+    p.armor = item;
+    let extra = item.hpBonus||0;
+    if(extra){p.maxHp+=extra;p.hp+=extra;}
+    log('info',`Vybaveno: ${item.name} (DEF ${item.def})`);
+  } else if(item.type==='potion'){
+    if(item.heal){
+      let healed = Math.min(item.heal, p.maxHp-p.hp);
+      p.hp += healed;
+      log('heal',`Vyléčeno: +${healed} HP`);
+    }
+    if(item.healFull){p.hp=p.maxHp;log('heal','Plně vyléčen!');}
+    if(item.atkBuff){p.buffs.push({atkBuff:item.atkBuff,duration:item.duration});log('info',`ATK +${item.atkBuff} na ${item.duration} tur`);}
+    if(item.defBuff){p.buffs.push({defBuff:item.defBuff,duration:item.duration});log('info',`DEF +${item.defBuff} na ${item.duration} tur`);}
+    if(item.spdBuff){p.buffs.push({spdBuff:item.spdBuff,duration:item.duration});log('info',`SPD buff na ${item.duration} tur`);}
+    if(item.xpGain){p.xp+=item.xpGain;log('info',`+${item.xpGain} XP`);checkLevelUp();}
+    p.inventory = p.inventory.filter(i=>i.id!==item.id);
+  } else if(item.type==='teleport'){
+    let rooms = [];
+    for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++) if(G.map[y][x]===T.FLOOR) rooms.push({x,y});
+    let dest = pick(rooms);
+    p.x=dest.x;p.y=dest.y;
+    item.charges--;
+    if(item.charges<=0) p.inventory = p.inventory.filter(i=>i.id!==item.id);
+    log('info','Teleportován! Snad ne do lávy...');
+  } else if(item.type==='reveal'){
+    for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++) G.seen[y][x]=Math.max(G.seen[y][x],1);
+    item.charges--;
+    if(item.charges<=0) p.inventory = p.inventory.filter(i=>i.id!==item.id);
+    log('info','Mapa odkryta!');
+  } else if(item.type==='bomb'){
+    // Damage all enemies in radius 3
+    let killed = 0;
+    for(let e of G.enemies){
+      if(dist(e,p)<=3){
+        e.hp -= item.dmg;
+        if(e.hp<=0){killed++;p.xp+=e.xp;p.gold+=e.gold;}
+      }
+    }
+    G.enemies = G.enemies.filter(e=>e.hp>0);
+    item.charges--;
+    if(item.charges<=0) p.inventory = p.inventory.filter(i=>i.id!==item.id);
+    log('dmg',`💣 BOOM! ${killed} nepřátel zničeno.`);
+    checkLevelUp();
+  }
+  renderInventory();
+  render();
+}
+
+function dropItem(item){
+  let p = G.player;
+  if(p.weapon===item) p.weapon=null;
+  if(p.armor===item) p.armor=null;
+  p.inventory = p.inventory.filter(i=>i.id!==item.id);
+  item.x=p.x;item.y=p.y;
+  G.groundItems.push(item);
+  log('info',`Zahodil jsi: ${item.name}`);
+  renderInventory();
+}
+
+function useQuickPotion(){
+  let p = G.player;
+  let potion = p.inventory.find(i=>i.type==='potion'&&(i.heal||i.healFull));
+  if(potion){useItem(potion);}
+  else{log('info','Žádný léčivý lektvar v inventáři.');}
+}
+
+// ============== GAME OVER / WIN ==============
+function gameOver(){
+  G.gameOver = true;
+  let p = G.player;
+  
+  // Check for revive amulet
+  let revive = p.inventory.find(i=>i.type==='revive'&&i.charges>0);
+  if(revive){
+    revive.charges--;
+    if(revive.charges<=0) p.inventory = p.inventory.filter(i=>i.id!==revive.id);
+    p.hp = Math.floor(p.maxHp*0.5);
+    G.gameOver = false;
+    log('heal','💀 Amulet oživení tě zachránil! 50% HP obnoveno.');
+    log('sarcasm','Smrt: "Počkej, to nemůžeš!"');
+    render();
+    return;
+  }
+  
+  let score = calcScore();
+  saveScore(score);
+  
+  overlay.style.display='flex';
+  overlayContent.innerHTML=`
+    <h1>💀 GAME OVER</h1>
+    <p style="color:#f44">${pick(DEATH_MSGS)}</p>
+    <h2>Statistiky</h2>
+    <p>Patro: ${G.floor} | Level: ${p.lvl} | Zabití: ${p.kills}</p>
+    <p>Zlato: ${p.gold} | Tahy: ${p.turns}</p>
+    <p style="color:#0ff;font-size:20px">SKÓRE: ${score}</p>
+    <h2>🏆 High Scores</h2>
+    ${renderScores()}
+    <button onclick="overlay.style.display='none';initGame();render();">ZNOVU →</button>
+  `;
+}
+
+function wonGame(){
+  G.gameOver = true;
+  G.won = true;
+  let score = calcScore() * 2;
+  saveScore(score);
+  
+  overlay.style.display='flex';
+  overlayContent.innerHTML=`
+    <h1 style="color:#ff0">⚡ VICTORY! ⚡</h1>
+    <p style="color:#0f0">Prošel jsi celý dungeon. Respekt, stratége.</p>
+    <p style="color:#888;font-style:italic">AGI je poražena. Svět je v bezpečí. Prozatím.</p>
+    <h2>Statistiky</h2>
+    <p>Level: ${G.player.lvl} | Zabití: ${G.player.kills}</p>
+    <p>Zlato: ${G.player.gold} | Tahy: ${G.player.turns}</p>
+    <p style="color:#ff0;font-size:24px">SKÓRE: ${score}</p>
+    <h2>🏆 Hall of Fame</h2>
+    ${renderScores()}
+    <button onclick="overlay.style.display='none';initGame();render();">ZNOVU →</button>
+  `;
+}
+
+function calcScore(){
+  let p = G.player;
+  return p.kills * 10 + p.gold + G.floor * 50 + p.lvl * 30 - Math.floor(p.turns*0.1);
+}
+
+function saveScore(score){
+  let scores = JSON.parse(localStorage.getItem('neonabyss_scores')||'[]');
+  scores.push({score, floor:G.floor, lvl:G.player.lvl, kills:G.player.kills, date:new Date().toLocaleDateString()});
+  scores.sort((a,b)=>b.score-a.score);
+  scores = scores.slice(0,10);
+  localStorage.setItem('neonabyss_scores', JSON.stringify(scores));
+}
+
+function renderScores(){
+  let scores = JSON.parse(localStorage.getItem('neonabyss_scores')||'[]');
+  if(!scores.length) return '<p style="color:#666">Zatím žádné.</p>';
+  return scores.map((s,i)=>
+    `<div class="score-row"><span>#${i+1} ${s.date}</span><span>P${s.floor} Lv${s.lvl} K${s.kills}</span><span style="color:#0ff">${s.score}</span></div>`
+  ).join('');
+}
+
+// ============== RENDER ==============
+function resize(){
+  let area = document.getElementById('game-area');
+  let w = area.clientWidth, h = area.clientHeight;
+  let tilesX = Math.floor(w/TILE), tilesY = Math.floor(h/TILE);
+  canvas.width = tilesX * TILE;
+  canvas.height = tilesY * TILE;
+  canvas._tilesX = tilesX;
+  canvas._tilesY = tilesY;
+  render();
+}
+
+function render(){
+  if(!G) return;
+  let p = G.player;
+  let tw = canvas._tilesX || 20, th = canvas._tilesY || 15;
+  let camX = Math.floor(p.x - tw/2);
+  let camY = Math.floor(p.y - th/2);
+  camX = clamp(camX, 0, MAP_W-tw);
+  camY = clamp(camY, 0, MAP_H-th);
+  
+  let shake = G.shakeTimer > 0 ? rng(-2,2) : 0;
+  if(G.shakeTimer>0) G.shakeTimer--;
+  
+  ctx.fillStyle='#0a0a0f';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  // Draw tiles
+  for(let y=0;y<th;y++){
+    for(let x=0;x<tw;x++){
+      let mx=camX+x, my=camY+y;
+      if(mx<0||mx>=MAP_W||my<0||my>=MAP_H) continue;
+      let vis = G.seen[my][mx];
+      if(vis===0) continue;
+      
+      let tile = G.map[my][mx];
+      let sx=x*TILE+shake, sy=y*TILE+shake;
+      
+      let col = TCOLORS[tile]||'#111';
+      if(vis===1){
+        // Dim previously seen
+        ctx.globalAlpha = 0.3;
+      } else {
+        ctx.globalAlpha = 1;
+      }
+      
+      ctx.fillStyle = col;
+      ctx.fillRect(sx,sy,TILE,TILE);
+      
+      // Tile decorations
+      if(tile===T.WALL && vis>=1){
+        ctx.fillStyle='#252538';
+        ctx.fillRect(sx+1,sy+1,TILE-2,TILE-2);
+        // Subtle grid lines
+        ctx.strokeStyle='#1a1a2e';
+        ctx.strokeRect(sx,sy,TILE,TILE);
+      }
+      if(tile===T.FLOOR && vis===2){
+        // Subtle dot pattern
+        if((mx+my)%4===0){ctx.fillStyle='#1a1a28';ctx.fillRect(sx+TILE/2-1,sy+TILE/2-1,2,2);}
+      }
+      if(tile===T.STAIRS && vis>=1){
+        ctx.fillStyle='#003333';ctx.fillRect(sx,sy,TILE,TILE);
+        ctx.font='18px serif';ctx.fillStyle='#0ff';
+        ctx.fillText('⬇',sx+4,sy+20);
+      }
+      if(tile===T.DOOR && vis>=1){
+        ctx.fillStyle='#332200';ctx.fillRect(sx+TILE/4,sy,TILE/2,TILE);
+      }
+      if(tile===T.TRAP && vis===2){
+        // Hidden trap - slightly different shade
+        ctx.fillStyle='#1c1c22';ctx.fillRect(sx+4,sy+4,TILE-8,TILE-8);
+      }
+      if(tile===T.CHEST && vis>=1){
+        ctx.font='18px serif';ctx.fillText('📦',sx+2,sy+20);
+      }
+      if(tile===T.SHRINE && vis>=1){
+        ctx.font='18px serif';ctx.fillText('⛩️',sx+2,sy+20);
+      }
+      if(tile===T.WATER && vis>=1){
+        ctx.fillStyle=vis===2?'#002255':'#001133';
+        ctx.fillRect(sx,sy,TILE,TILE);
+        // Wave effect
+        if(vis===2){
+          ctx.fillStyle='#003377';
+          let wave = Math.sin((Date.now()/500+mx+my)*0.5)*3;
+          ctx.fillRect(sx+4,sy+12+wave,TILE-8,2);
+        }
+      }
+      if(tile===T.LAVA && vis>=1){
+        ctx.fillStyle=vis===2?'#441100':'#220800';
+        ctx.fillRect(sx,sy,TILE,TILE);
+        if(vis===2){
+          ctx.fillStyle='#ff4400';
+          ctx.globalAlpha=0.3+Math.sin(Date.now()/300+mx)*0.2;
+          ctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);
+        }
+      }
+      
+      ctx.globalAlpha = 1;
+    }
+  }
+  
+  // Draw ground items
+  for(let item of G.groundItems){
+    let sx=(item.x-camX)*TILE+shake, sy=(item.y-camY)*TILE+shake;
+    if(G.seen[item.y]&&G.seen[item.y][item.x]===2){
+      ctx.font='16px serif';
+      ctx.fillText(item.sprite||'💎',sx+4,sy+20);
+    }
+  }
+  
+  // Draw enemies
+  for(let e of G.enemies){
+    if(G.seen[e.y]&&G.seen[e.y][e.x]===2){
+      let sx=(e.x-camX)*TILE+shake, sy=(e.y-camY)*TILE+shake;
+      // Background glow
+      ctx.fillStyle = e.isBoss ? '#330000' : '#1a1a2a';
+      ctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);
+      // Sprite
+      ctx.font = e.isBoss ? '22px serif' : '18px serif';
+      ctx.fillText(e.sprite, sx + (e.isBoss?1:4), sy + (e.isBoss?22:20));
+      // HP bar
+      let hpPct = e.hp/e.maxHp;
+      ctx.fillStyle='#300';ctx.fillRect(sx+2,sy,TILE-4,3);
+      ctx.fillStyle=hpPct>0.5?'#0f0':hpPct>0.25?'#ff0':'#f00';
+      ctx.fillRect(sx+2,sy,Math.floor((TILE-4)*hpPct),3);
+    }
+  }
+  
+  // Draw player
+  let px=(p.x-camX)*TILE+shake, py=(p.y-camY)*TILE+shake;
+  // Glow
+  ctx.fillStyle='rgba(0,255,255,0.1)';
+  ctx.beginPath();ctx.arc(px+TILE/2,py+TILE/2,TILE*1.2,0,Math.PI*2);ctx.fill();
+  // Player
+  ctx.font='20px serif';
+  ctx.fillText('🧑‍💻',px+2,py+22);
+  
+  // Update HUD
+  document.getElementById('s-floor').textContent = `P${G.floor}`;
+  document.getElementById('s-hp').textContent = `${p.hp}/${p.maxHp}`;
+  document.getElementById('hp-fill').style.width = `${(p.hp/p.maxHp)*100}%`;
+  document.getElementById('hp-fill').style.background = p.hp/p.maxHp>0.5?'#0f0':p.hp/p.maxHp>0.25?'#ff0':'#f00';
+  document.getElementById('s-def').textContent = p.def + (p.armor?p.armor.def:0);
+  document.getElementById('s-atk').textContent = p.atk + (p.weapon?p.weapon.atk:0);
+  document.getElementById('s-lvl').textContent = p.lvl;
+  document.getElementById('xp-fill').style.width = `${(p.xp/p.xpNext)*100}%`;
+  document.getElementById('s-gold').textContent = p.gold;
+  
+  // Minimap
+  renderMinimap();
+  renderInventory();
+}
+
+function renderMinimap(){
+  let mm = mmCtx;
+  let scale = 100/Math.max(MAP_W,MAP_H);
+  mm.fillStyle='#000';mm.fillRect(0,0,100,100);
+  for(let y=0;y<MAP_H;y++){
+    for(let x=0;x<MAP_W;x++){
+      if(G.seen[y][x]===0) continue;
+      let tile=G.map[y][x];
+      if(tile===T.WALL) mm.fillStyle=G.seen[y][x]===2?'#333':'#1a1a1a';
+      else if(tile===T.STAIRS) mm.fillStyle='#0ff';
+      else mm.fillStyle=G.seen[y][x]===2?'#224':'#112';
+      mm.fillRect(Math.floor(x*scale),Math.floor(y*scale),Math.ceil(scale),Math.ceil(scale));
+    }
+  }
+  // Enemies
+  for(let e of G.enemies){
+    if(G.seen[e.y]&&G.seen[e.y][e.x]===2){
+      mm.fillStyle=e.isBoss?'#f00':'#f44';
+      mm.fillRect(Math.floor(e.x*scale),Math.floor(e.y*scale),Math.ceil(scale*1.5),Math.ceil(scale*1.5));
+    }
+  }
+  // Player
+  mm.fillStyle='#0ff';
+  mm.fillRect(Math.floor(G.player.x*scale)-1,Math.floor(G.player.y*scale)-1,4,4);
+}
+
+function renderInventory(){
+  if(!G) return;
+  let p = G.player;
+  let html = '<h3>📦 INVENTÁŘ ('+p.inventory.length+'/20)</h3>';
+  if(p.weapon) html+=`<div style="color:#0ff;font-size:11px">⚔️ ${p.weapon.name} (ATK ${p.weapon.atk})</div>`;
+  if(p.armor) html+=`<div style="color:#0ff;font-size:11px">🛡️ ${p.armor.name} (DEF ${p.armor.def})</div>`;
+  if(p.buffs.length) html+=`<div style="color:#ff0;font-size:10px">Buffs: ${p.buffs.map(b=>{
+    if(b.atkBuff) return `ATK+${b.atkBuff}(${b.duration})`;
+    if(b.defBuff) return `DEF+${b.defBuff}(${b.duration})`;
+    if(b.spdBuff) return `SPD(${b.duration})`;
+    return '?';
+  }).join(', ')}</div>`;
+  if(p.poisonTurns>0) html+=`<div style="color:#0f0;font-size:10px">🤢 Jed: ${p.poisonTurns} tur</div>`;
+  html+='<hr style="border-color:#2a2a3a;margin:4px 0">';
+  
+  for(let item of p.inventory){
+    let equipped = (item===p.weapon||item===p.armor);
+    let rClass = 'rarity-'+RARITY_NAMES[item.rarity||0];
+    html+=`<div class="inv-item${equipped?' equipped':''}" data-id="${item.id}">
+      <span class="${rClass}">${item.sprite||'?'} ${item.name}${equipped?' [E]':''}</span>
+      <span style="font-size:10px">${item.type==='weapon'?'A'+item.atk:item.type==='armor'?'D'+item.def:item.type==='potion'?'pot':item.charges?'×'+item.charges:''}</span>
+    </div>`;
+  }
+  invEl.innerHTML = html;
+  
+  // Click handlers
+  invEl.querySelectorAll('.inv-item').forEach(el=>{
+    el.addEventListener('click',()=>{
+      let id = el.dataset.id;
+      let item = G.player.inventory.find(i=>i.id===id);
+      if(!item) return;
+      showItemMenu(item);
+    });
+  });
+}
+
+function showItemMenu(item){
+  let rColor = RARITY_COLORS[item.rarity||0];
+  overlay.style.display='flex';
+  let stats = '';
+  if(item.type==='weapon') stats=`ATK: ${item.atk}${item.crit?' | Crit: '+item.crit+'%':''}${item.stun?' | Stun: '+item.stun+'%':''}${item.pierce?' | Pierce: '+item.pierce+'%':''}`;
+  if(item.type==='armor') stats=`DEF: ${item.def}${item.hpBonus?' | HP+'+item.hpBonus:''}`;
+  if(item.heal) stats=`Heal: ${item.heal}`;
+  if(item.healFull) stats='Plné vyléčení';
+  if(item.atkBuff) stats=`ATK+${item.atkBuff} (${item.duration} tur)`;
+  if(item.defBuff) stats=`DEF+${item.defBuff} (${item.duration} tur)`;
+  if(item.xpGain) stats=`XP+${item.xpGain}`;
+  if(item.charges) stats+=` | Charges: ${item.charges}`;
+  
+  let equipped = (item===G.player.weapon||item===G.player.armor);
+  
+  overlayContent.innerHTML=`
+    <h2 style="color:${rColor}">${item.sprite} ${item.name}</h2>
+    <p style="color:${rColor}">[${RARITY_NAMES[item.rarity||0].toUpperCase()}]</p>
+    <p>${stats}</p>
+    <p style="color:#888;font-style:italic">"${item.desc||'Bez popisu.'}"</p>
+    ${equipped?'<p style="color:#0f0">[VYBAVENO]</p>':''}
+    <button onclick="useItem(G.player.inventory.find(i=>i.id==='${item.id}'));overlay.style.display='none'">
+      ${item.type==='weapon'||item.type==='armor'?'Vybavit':'Použít'}
+    </button>
+    <button onclick="dropItem(G.player.inventory.find(i=>i.id==='${item.id}'));overlay.style.display='none'">Zahodit</button>
+    <button onclick="overlay.style.display='none'">Zavřít</button>
+  `;
+}
+
+// ============== TITLE SCREEN ==============
+function showTitle(){
+  overlay.style.display='flex';
+  overlayContent.innerHTML=`
+    <h1 style="font-size:32px;color:#0ff;text-shadow:0 0 20px #0ff">⚡ NEON ABYSS ⚡</h1>
+    <p style="color:#f0f;font-size:14px">// CYBERPUNK ROGUELIKE DUNGEON CRAWLER //</p>
+    <br>
+    <p>12 pater procedurálně generovaného dungeonu.</p>
+    <p>Turn-based combat. Permadeath. Loot.</p>
+    <p style="color:#888;font-style:italic">"Strategie je jen fancy slovo pro 'nezemřít'."</p>
+    <br>
+    <p style="font-size:12px;color:#666">
+      WASD / šipky = pohyb & útok<br>
+      . = sebrat předmět<br>
+      P = rychlý lektvar<br>
+      SPACE = čekat (přeskočit tah)<br>
+      Klikni na inventář pro detaily
+    </p>
+    <br>
+    <h2>🏆 High Scores</h2>
+    ${renderScores()}
+    <br>
+    <button onclick="overlay.style.display='none';initGame();render();" style="font-size:20px;padding:15px 50px">
+      ▶ ZAČÍT HRU
+    </button>
+  `;
+}
+
+// ============== INPUT ==============
+document.addEventListener('keydown', e=>{
+  if(G && G.gameOver) return;
+  if(overlay.style.display==='flex') return;
+  
+  let moved = false;
+  switch(e.key){
+    case'ArrowUp':case'w':case'W':tryMove(0,-1);moved=true;break;
+    case'ArrowDown':case's':case'S':tryMove(0,1);moved=true;break;
+    case'ArrowLeft':case'a':case'A':tryMove(-1,0);moved=true;break;
+    case'ArrowRight':case'd':case'D':tryMove(1,0);moved=true;break;
+    case' ':endTurn();moved=true;break; // Wait
+    case'.':pickupItem();break;
+    case'p':case'P':useQuickPotion();render();break;
+  }
+  if(moved) e.preventDefault();
+});
+
+// ============== ANIMATION LOOP ==============
+let lastRender = 0;
+function animLoop(t){
+  // Animated tiles (water, lava) - re-render periodically
+  if(t - lastRender > 200 && G && !G.gameOver){
+    render();
+    lastRender = t;
+  }
+  requestAnimationFrame(animLoop);
+}
+
+// ============== INIT ==============
+window.addEventListener('resize', resize);
+resize();
+showTitle();
+requestAnimationFrame(animLoop);
+</script>
+</body>
+</html>

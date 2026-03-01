@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NETHACK LITE — Roguelike pro Bořka</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #c8c8d0; font-family: 'Courier New', monospace; display: flex; height: 100vh; overflow: hidden; }
+#game-container { display: flex; width: 100%; }
+#sidebar { width: 280px; background: #12121a; border-right: 1px solid #2a2a3a; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+#main { flex: 1; display: flex; flex-direction: column; }
+#map-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+#map { font-size: 18px; line-height: 1.2; white-space: pre; letter-spacing: 2px; }
+#log { height: 140px; background: #0d0d14; border-top: 1px solid #2a2a3a; padding: 10px 16px; overflow-y: auto; font-size: 13px; }
+#log div { margin: 2px 0; }
+.stat-block { background: #1a1a25; border-radius: 6px; padding: 10px 12px; }
+.stat-block h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin-bottom: 6px; }
+.stat-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 13px; }
+.stat-val { color: #e8c840; font-weight: bold; }
+.bar { height: 8px; background: #1a1a25; border-radius: 4px; margin-top: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.hp-bar { background: linear-gradient(90deg, #e04040, #ff6060); }
+.xp-bar { background: linear-gradient(90deg, #4080e0, #60a0ff); }
+.mp-bar { background: linear-gradient(90deg, #8040e0, #a060ff); }
+.inventory-slot { background: #1a1a25; border-radius: 4px; padding: 6px 8px; margin: 2px 0; font-size: 12px; cursor: pointer; }
+.inventory-slot:hover { background: #252535; }
+.equipped { border-left: 2px solid #e8c840; }
+.log-combat { color: #e06060; }
+.log-item { color: #60c060; }
+.log-info { color: #6080c0; }
+.log-special { color: #e8c840; }
+h2 { font-size: 14px; color: #e8c840; letter-spacing: 3px; text-transform: uppercase; }
+#help { font-size: 11px; color: #555; line-height: 1.6; }
+#minimap { font-size: 5px; line-height: 1; letter-spacing: 1px; color: #334; white-space: pre; }
+.dead-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 100; }
+.dead-overlay h1 { font-size: 48px; color: #e04040; margin-bottom: 20px; }
+.dead-overlay p { color: #888; margin: 5px; font-size: 16px; }
+.dead-overlay button { margin-top: 30px; padding: 12px 32px; background: #e8c840; color: #0a0a0f; border: none; font-family: inherit; font-size: 16px; cursor: pointer; border-radius: 6px; }
+.win-overlay h1 { color: #e8c840 !important; }
+#start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 200; }
+#start-screen h1 { font-size: 42px; color: #e8c840; letter-spacing: 8px; margin-bottom: 10px; }
+#start-screen .subtitle { color: #666; font-size: 14px; margin-bottom: 40px; }
+.class-select { display: flex; gap: 16px; margin-bottom: 30px; }
+.class-card { background: #1a1a25; border: 2px solid #2a2a3a; border-radius: 8px; padding: 20px; width: 180px; cursor: pointer; text-align: center; transition: all 0.2s; }
+.class-card:hover, .class-card.selected { border-color: #e8c840; background: #22222f; }
+.class-card h3 { color: #e8c840; font-size: 18px; margin-bottom: 8px; }
+.class-card p { font-size: 11px; color: #888; line-height: 1.5; }
+.class-card .emoji { font-size: 32px; margin-bottom: 8px; }
+#start-btn { padding: 14px 48px; background: #e8c840; color: #0a0a0f; border: none; font-family: inherit; font-size: 18px; cursor: pointer; border-radius: 6px; letter-spacing: 2px; }
+#start-btn:hover { background: #f0d860; }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>⚔️ DUNGEON OF AMBITION</h1>
+  <p class="subtitle">Roguelike pro ty, co neříkaj "to nejde"</p>
+  <div class="class-select">
+    <div class="class-card selected" data-class="warrior" onclick="selectClass(this)">
+      <div class="emoji">⚔️</div>
+      <h3>Warrior</h3>
+      <p>Vysoké HP, silné útoky.<br>Pro ty co jdou na věc přímo.</p>
+    </div>
+    <div class="class-card" data-class="rogue" onclick="selectClass(this)">
+      <div class="emoji">🗡️</div>
+      <h3>Rogue</h3>
+      <p>Kritické hity, rychlost.<br>Strategie přes damage.</p>
+    </div>
+    <div class="class-card" data-class="mage" onclick="selectClass(this)">
+      <div class="emoji">🔮</div>
+      <h3>Mage</h3>
+      <p>Kouzla, AoE, mana.<br>Big brain plays.</p>
+    </div>
+  </div>
+  <button id="start-btn" onclick="startGame()">ENTER THE DUNGEON</button>
+</div>
+
+<div id="game-container" style="display:none;">
+  <div id="sidebar">
+    <h2>⚔️ Dungeon</h2>
+    <div class="stat-block">
+      <h3>Hráč</h3>
+      <div class="stat-row"><span>Level</span><span class="stat-val" id="s-level">1</span></div>
+      <div class="stat-row"><span>Floor</span><span class="stat-val" id="s-floor">1</span></div>
+      <div class="stat-row"><span>Gold</span><span class="stat-val" id="s-gold">0</span></div>
+      <div class="stat-row"><span>Kills</span><span class="stat-val" id="s-kills">0</span></div>
+    </div>
+    <div class="stat-block">
+      <h3>HP</h3>
+      <div class="stat-row"><span id="s-hp">50/50</span></div>
+      <div class="bar"><div class="bar-fill hp-bar" id="hp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="stat-block" id="mp-block" style="display:none">
+      <h3>Mana</h3>
+      <div class="stat-row"><span id="s-mp">30/30</span></div>
+      <div class="bar"><div class="bar-fill mp-bar" id="mp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="stat-block">
+      <h3>XP</h3>
+      <div class="stat-row"><span id="s-xp">0/20</span></div>
+      <div class="bar"><div class="bar-fill xp-bar" id="xp-bar" style="width:0%"></div></div>
+    </div>
+    <div class="stat-block">
+      <h3>Stats</h3>
+      <div class="stat-row"><span>ATK</span><span class="stat-val" id="s-atk">5</span></div>
+      <div class="stat-row"><span>DEF</span><span class="stat-val" id="s-def">2</span></div>
+      <div class="stat-row"><span>SPD</span><span class="stat-val" id="s-spd">10</span></div>
+    </div>
+    <div class="stat-block">
+      <h3>Inventář <span style="color:#555">(1-5 použít)</span></h3>
+      <div id="inventory"></div>
+    </div>
+    <div id="help">
+      WASD / Šipky = pohyb<br>
+      SPACE = čekej tah<br>
+      1-5 = použít item<br>
+      F = fireball (mage)<br>
+      E = interakce<br>
+      . = pickup item<br>
+      &gt; = sestup (na schodech)
+    </div>
+  </div>
+  <div id="main">
+    <div id="map-container"><pre id="map"></pre></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+// === GAME STATE ===
+let G = {};
+const COLS = 60, ROWS = 30;
+const FLOOR_COUNT = 15;
+let selectedClass = 'warrior';
+
+function selectClass(el) {
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedClass = el.dataset.class;
+}
+
+const CLASS_STATS = {
+  warrior: { hp: 60, mp: 0, atk: 7, def: 4, spd: 8, hpGain: 12, atkGain: 2, defGain: 1.5 },
+  rogue:   { hp: 45, mp: 0, atk: 6, def: 2, spd: 14, hpGain: 8, atkGain: 2.5, defGain: 1, critChance: 0.25 },
+  mage:    { hp: 35, mp: 40, atk: 4, def: 1, spd: 10, hpGain: 6, atkGain: 1.5, defGain: 0.5, mpGain: 8 }
+};
+
+const ENEMIES = [
+  { ch: 'r', name: 'Krysa', color: '#886644', hp: 8, atk: 2, def: 0, xp: 5, speed: 8, floors: [1,4] },
+  { ch: 'g', name: 'Goblin', color: '#44aa44', hp: 15, atk: 4, def: 1, xp: 10, speed: 10, floors: [1,5] },
+  { ch: 's', name: 'Skeleton', color: '#cccccc', hp: 20, atk: 6, def: 2, xp: 15, speed: 9, floors: [2,7] },
+  { ch: 'o', name: 'Ork', color: '#44cc44', hp: 35, atk: 8, def: 3, xp: 25, speed: 8, floors: [3,8] },
+  { ch: 'w', name: 'Wraith', color: '#8866cc', hp: 25, atk: 10, def: 1, xp: 30, speed: 14, floors: [4,9] },
+  { ch: 'T', name: 'Troll', color: '#668844', hp: 60, atk: 12, def: 5, xp: 45, speed: 6, floors: [5,10] },
+  { ch: 'D', name: 'Demon', color: '#cc4444', hp: 50, atk: 15, def: 4, xp: 55, speed: 12, floors: [7,12] },
+  { ch: 'V', name: 'Vampire', color: '#cc44aa', hp: 45, atk: 14, def: 3, xp: 50, speed: 13, floors: [8,13], lifesteal: true },
+  { ch: 'L', name: 'Lich', color: '#aaaaff', hp: 70, atk: 18, def: 6, xp: 80, speed: 11, floors: [10,14] },
+  { ch: 'W', name: 'Dragon', color: '#ff6644', hp: 150, atk: 25, def: 10, xp: 200, speed: 10, floors: [13,15], boss: true },
+];
+
+const ITEMS = [
+  { ch: '!', name: 'Health Potion', color: '#ff4444', type: 'consumable', effect: 'heal', value: 20, floors: [1,15] },
+  { ch: '!', name: 'Greater Health Potion', color: '#ff6666', type: 'consumable', effect: 'heal', value: 50, floors: [5,15] },
+  { ch: '?', name: 'Mana Potion', color: '#6666ff', type: 'consumable', effect: 'mana', value: 20, floors: [1,15] },
+  { ch: '/', name: 'Scroll of Fire', color: '#ff8800', type: 'consumable', effect: 'aoe', value: 25, floors: [3,15] },
+  { ch: '$', name: 'Gold', color: '#e8c840', type: 'gold', value: [5,25], floors: [1,15] },
+  { ch: ')', name: 'Železný meč', color: '#aaaaaa', type: 'weapon', atk: 3, floors: [1,4] },
+  { ch: ')', name: 'Ocelový meč', color: '#cccccc', type: 'weapon', atk: 6, floors: [3,8] },
+  { ch: ')', name: 'Runový meč', color: '#44aaff', type: 'weapon', atk: 10, floors: [6,12] },
+  { ch: ')', name: 'Dračí meč', color: '#ff4444', type: 'weapon', atk: 16, floors: [10,15] },
+  { ch: '[', name: 'Kožená zbroj', color: '#886644', type: 'armor', def: 2, floors: [1,5] },
+  { ch: '[', name: 'Kroužková zbroj', color: '#aaaaaa', type: 'armor', def: 4, floors: [4,9] },
+  { ch: '[', name: 'Plátová zbroj', color: '#ccccdd', type: 'armor', def: 7, floors: [7,13] },
+  { ch: '[', name: 'Dračí zbroj', color: '#ff6644', type: 'armor', def: 12, floors: [11,15] },
+  { ch: '=', name: 'Ring of Strength', color: '#e8c840', type: 'ring', atk: 2, def: 1, floors: [3,15] },
+  { ch: '*', name: 'Amulet of Vitality', color: '#44ff44', type: 'amulet', hpBonus: 20, floors: [5,15] },
+];
+
+function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function chance(p) { return Math.random() < p; }
+
+// === DUNGEON GENERATION ===
+function generateFloor(floorNum) {
+  let tiles = [];
+  for (let y = 0; y < ROWS; y++) {
+    tiles[y] = [];
+    for (let x = 0; x < COLS; x++) tiles[y][x] = { ch: '#', color: '#2a2a3a', walkable: false };
+  }
+  
+  // BSP rooms
+  let rooms = [];
+  function carveRoom(x1, y1, x2, y2) {
+    for (let y = y1; y <= y2; y++)
+      for (let x = x1; x <= x2; x++)
+        tiles[y][x] = { ch: '.', color: '#3a3a4a', walkable: true };
+    rooms.push({ x1, y1, x2, y2, cx: Math.floor((x1+x2)/2), cy: Math.floor((y1+y2)/2) });
+  }
+  
+  function carveCorridor(x1, y1, x2, y2) {
+    let x = x1, y = y1;
+    while (x !== x2) {
+      tiles[y][x] = { ch: '.', color: '#333340', walkable: true };
+      x += x < x2 ? 1 : -1;
+    }
+    while (y !== y2) {
+      tiles[y][x] = { ch: '.', color: '#333340', walkable: true };
+      y += y < y2 ? 1 : -1;
+    }
+  }
+  
+  let numRooms = rng(6, 10);
+  for (let i = 0; i < numRooms * 20; i++) {
+    let w = rng(4, 10), h = rng(3, 7);
+    let rx = rng(1, COLS - w - 2), ry = rng(1, ROWS - h - 2);
+    let overlap = false;
+    for (let r of rooms) {
+      if (rx <= r.x2 + 1 && rx + w >= r.x1 - 1 && ry <= r.y2 + 1 && ry + h >= r.y1 - 1) {
+        overlap = true; break;
+      }
+    }
+    if (!overlap) {
+      carveRoom(rx, ry, rx + w - 1, ry + h - 1);
+      if (rooms.length >= numRooms) break;
+    }
+  }
+  
+  // Connect rooms
+  for (let i = 1; i < rooms.length; i++) {
+    if (chance(0.5)) {
+      carveCorridor(rooms[i-1].cx, rooms[i-1].cy, rooms[i].cx, rooms[i-1].cy);
+      carveCorridor(rooms[i].cx, rooms[i-1].cy, rooms[i].cx, rooms[i].cy);
+    } else {
+      carveCorridor(rooms[i-1].cx, rooms[i-1].cy, rooms[i-1].cx, rooms[i].cy);
+      carveCorridor(rooms[i-1].cx, rooms[i].cy, rooms[i].cx, rooms[i].cy);
+    }
+  }
+  
+  // Place stairs down
+  let stairRoom = rooms[rooms.length - 1];
+  let sx = rng(stairRoom.x1, stairRoom.x2), sy = rng(stairRoom.y1, stairRoom.y2);
+  if (floorNum < FLOOR_COUNT) {
+    tiles[sy][sx] = { ch: '>', color: '#e8c840', walkable: true, stairs: true };
+  } else {
+    // Final floor: place amulet
+    tiles[sy][sx] = { ch: '♦', color: '#ff44ff', walkable: true, amulet: true };
+  }
+  
+  // Player start
+  let startRoom = rooms[0];
+  let px = rng(startRoom.x1, startRoom.x2), py = rng(startRoom.y1, startRoom.y2);
+  
+  // Place enemies
+  let enemies = [];
+  let possibleEnemies = ENEMIES.filter(e => floorNum >= e.floors[0] && floorNum <= e.floors[1]);
+  let numEnemies = rng(4 + floorNum, 7 + floorNum * 2);
+  for (let i = 0; i < numEnemies; i++) {
+    let template = possibleEnemies[rng(0, possibleEnemies.length - 1)];
+    let room = rooms[rng(1, rooms.length - 1)];
+    if (!room) continue;
+    let ex = rng(room.x1, room.x2), ey = rng(room.y1, room.y2);
+    if (ex === px && ey === py) continue;
+    let scale = 1 + (floorNum - 1) * 0.12;
+    enemies.push({
+      ...template,
+      x: ex, y: ey,
+      hp: Math.floor(template.hp * scale),
+      maxHp: Math.floor(template.hp * scale),
+      atk: Math.floor(template.atk * scale),
+      def: Math.floor(template.def * scale),
+      alive: true
+    });
+  }
+  
+  // Place items
+  let items = [];
+  let possibleItems = ITEMS.filter(it => floorNum >= it.floors[0] && floorNum <= it.floors[1]);
+  let numItems = rng(3, 6);
+  for (let i = 0; i < numItems; i++) {
+    let template = possibleItems[rng(0, possibleItems.length - 1)];
+    let room = rooms[rng(0, rooms.length - 1)];
+    let ix = rng(room.x1, room.x2), iy = rng(room.y1, room.y2);
+    let item = { ...template, x: ix, y: iy };
+    if (item.type === 'gold') item.amount = rng(item.value[0], item.value[1]) * floorNum;
+    items.push(item);
+  }
+  
+  return { tiles, rooms, enemies, items, playerStart: { x: px, y: py } };
+}
+
+// === FOV ===
+function computeFOV(px, py, radius) {
+  let visible = new Set();
+  visible.add(`${px},${py}`);
+  for (let a = 0; a < 360; a += 1) {
+    let dx = Math.cos(a * Math.PI / 180);
+    let dy = Math.sin(a * Math.PI / 180);
+    for (let d = 1; d <= radius; d++) {
+      let x = Math.round(px + dx * d);
+      let y = Math.round(py + dy * d);
+      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) break;
+      visible.add(`${x},${y}`);
+      if (!G.floor.tiles[y][x].walkable) break;
+    }
+  }
+  return visible;
+}
+
+// === RENDERING ===
+function render() {
+  let visible = computeFOV(G.player.x, G.player.y, 8);
+  // Mark seen
+  visible.forEach(k => G.seen.add(k));
+  
+  let html = '';
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      let key = `${x},${y}`;
+      let isVisible = visible.has(key);
+      let isSeen = G.seen.has(key);
+      
+      if (x === G.player.x && y === G.player.y) {
+        html += `<span style="color:#e8c840;font-weight:bold">@</span>`;
+        continue;
+      }
+      
+      // Check for enemies
+      let enemy = isVisible && G.floor.enemies.find(e => e.alive && e.x === x && e.y === y);
+      if (enemy) {
+        html += `<span style="color:${enemy.color};font-weight:bold">${enemy.ch}</span>`;
+        continue;
+      }
+      
+      // Check for items
+      let item = isVisible && G.floor.items.find(it => it.x === x && it.y === y);
+      if (item) {
+        html += `<span style="color:${item.color}">${item.ch}</span>`;
+        continue;
+      }
+      
+      let tile = G.floor.tiles[y][x];
+      if (isVisible) {
+        html += `<span style="color:${tile.color}">${tile.ch}</span>`;
+      } else if (isSeen) {
+        html += `<span style="color:#1a1a24">${tile.ch}</span>`;
+      } else {
+        html += ' ';
+      }
+    }
+    html += '\n';
+  }
+  
+  document.getElementById('map').innerHTML = html;
+  
+  // Update sidebar
+  let p = G.player;
+  document.getElementById('s-level').textContent = p.level;
+  document.getElementById('s-floor').textContent = G.floorNum;
+  document.getElementById('s-gold').textContent = p.gold;
+  document.getElementById('s-kills').textContent = p.kills;
+  document.getElementById('s-hp').textContent = `${p.hp}/${p.maxHp}`;
+  document.getElementById('hp-bar').style.width = `${(p.hp/p.maxHp)*100}%`;
+  document.getElementById('s-xp').textContent = `${p.xp}/${p.xpNext}`;
+  document.getElementById('xp-bar').style.width = `${(p.xp/p.xpNext)*100}%`;
+  
+  let totalAtk = p.atk + (p.weapon ? p.weapon.atk : 0) + (p.ring ? p.ring.atk : 0);
+  let totalDef = p.def + (p.armor ? p.armor.def : 0) + (p.ring ? p.ring.def : 0);
+  document.getElementById('s-atk').textContent = totalAtk;
+  document.getElementById('s-def').textContent = totalDef;
+  document.getElementById('s-spd').textContent = p.spd;
+  
+  if (p.mp !== undefined) {
+    document.getElementById('mp-block').style.display = '';
+    document.getElementById('s-mp').textContent = `${p.mp}/${p.maxMp}`;
+    document.getElementById('mp-bar').style.width = `${(p.mp/p.maxMp)*100}%`;
+  }
+  
+  // Inventory
+  let invHtml = '';
+  for (let i = 0; i < 5; i++) {
+    if (p.inventory[i]) {
+      let it = p.inventory[i];
+      invHtml += `<div class="inventory-slot" onclick="useItem(${i})">${i+1}. <span style="color:${it.color}">${it.ch}</span> ${it.name}</div>`;
+    } else {
+      invHtml += `<div class="inventory-slot" style="color:#333">${i+1}. —</div>`;
+    }
+  }
+  // Show equipment
+  if (p.weapon) invHtml += `<div class="inventory-slot equipped">⚔ ${p.weapon.name} (+${p.weapon.atk})</div>`;
+  if (p.armor) invHtml += `<div class="inventory-slot equipped">🛡 ${p.armor.name} (+${p.armor.def})</div>`;
+  if (p.ring) invHtml += `<div class="inventory-slot equipped">💍 ${p.ring.name}</div>`;
+  if (p.amulet) invHtml += `<div class="inventory-slot equipped">📿 ${p.amulet.name}</div>`;
+  document.getElementById('inventory').innerHTML = invHtml;
+}
+
+function log(msg, cls = 'log-info') {
+  let el = document.getElementById('log');
+  let div = document.createElement('div');
+  div.className = cls;
+  div.textContent = msg;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  // Keep last 50
+  while (el.children.length > 50) el.removeChild(el.firstChild);
+}
+
+// === COMBAT ===
+function attack(attacker, defender, isPlayer) {
+  let atk = attacker.atk + (attacker.weapon ? attacker.weapon.atk : 0) + (attacker.ring ? (attacker.ring.atk||0) : 0);
+  let def = defender.def + (defender.armor ? defender.armor.def : 0) + (defender.ring ? (defender.ring.def||0) : 0);
+  
+  let dmg = Math.max(1, atk - def + rng(-2, 2));
+  
+  // Rogue crit
+  if (isPlayer && G.player.cls === 'rogue' && chance(CLASS_STATS.rogue.critChance)) {
+    dmg = Math.floor(dmg * 2.5);
+    log(`⚡ KRITICKÝ HIT! ${dmg} damage!`, 'log-special');
+  }
+  
+  defender.hp -= dmg;
+  
+  if (isPlayer) {
+    log(`Útočíš na ${defender.name} za ${dmg} dmg. [${Math.max(0,defender.hp)}/${defender.maxHp}]`, 'log-combat');
+    if (defender.hp <= 0) {
+      defender.alive = false;
+      G.player.xp += defender.xp;
+      G.player.kills++;
+      log(`💀 ${defender.name} poražen! +${defender.xp} XP`, 'log-special');
+      // Vampiric
+      if (defender.lifesteal) log(`${defender.name} už nebude krást životy...`, 'log-info');
+      checkLevelUp();
+    }
+  } else {
+    // Enemy lifesteal
+    if (attacker.lifesteal) {
+      let steal = Math.floor(dmg * 0.3);
+      attacker.hp = Math.min(attacker.maxHp, attacker.hp + steal);
+    }
+    log(`${attacker.name} tě zasáhl za ${dmg} dmg! [${G.player.hp}/${G.player.maxHp}]`, 'log-combat');
+    if (G.player.hp <= 0) {
+      gameOver(false);
+    }
+  }
+}
+
+function checkLevelUp() {
+  let p = G.player;
+  while (p.xp >= p.xpNext) {
+    p.xp -= p.xpNext;
+    p.level++;
+    let cs = CLASS_STATS[p.cls];
+    p.maxHp += Math.floor(cs.hpGain);
+    p.hp = p.maxHp;
+    p.atk += Math.floor(cs.atkGain);
+    p.def += Math.floor(cs.defGain);
+    if (cs.mpGain) { p.maxMp += cs.mpGain; p.mp = p.maxMp; }
+    p.xpNext = Math.floor(p.xpNext * 1.5);
+    log(`🎉 LEVEL UP! Jsi level ${p.level}!`, 'log-special');
+  }
+}
+
+// === ENEMY AI ===
+function moveEnemies() {
+  let px = G.player.x, py = G.player.y;
+  for (let e of G.floor.enemies) {
+    if (!e.alive) continue;
+    let dist = Math.abs(e.x - px) + Math.abs(e.y - py);
+    if (dist > 12) continue; // Too far to notice
+    
+    if (dist === 1) {
+      // Adjacent — attack
+      attack(e, G.player, false);
+      continue;
+    }
+    
+    // Simple pathfinding toward player
+    let dx = Math.sign(px - e.x);
+    let dy = Math.sign(py - e.y);
+    let moves = [];
+    if (dx !== 0) moves.push({ x: e.x + dx, y: e.y });
+    if (dy !== 0) moves.push({ x: e.x, y: e.y + dy });
+    if (dx && dy) moves.push({ x: e.x + dx, y: e.y + dy });
+    
+    for (let m of moves) {
+      if (m.x >= 0 && m.x < COLS && m.y >= 0 && m.y < ROWS && 
+          G.floor.tiles[m.y][m.x].walkable &&
+          !G.floor.enemies.some(oe => oe.alive && oe !== e && oe.x === m.x && oe.y === m.y) &&
+          !(m.x === px && m.y === py)) {
+        e.x = m.x; e.y = m.y;
+        break;
+      }
+    }
+  }
+}
+
+// === PLAYER ACTIONS ===
+function tryMove(dx, dy) {
+  let nx = G.player.x + dx, ny = G.player.y + dy;
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return;
+  
+  // Enemy?
+  let enemy = G.floor.enemies.find(e => e.alive && e.x === nx && e.y === ny);
+  if (enemy) {
+    attack(G.player, enemy, true);
+    endTurn();
+    return;
+  }
+  
+  if (!G.floor.tiles[ny][nx].walkable) return;
+  
+  G.player.x = nx;
+  G.player.y = ny;
+  
+  // Auto-pickup gold
+  let itemIdx = G.floor.items.findIndex(it => it.x === nx && it.y === ny && it.type === 'gold');
+  if (itemIdx >= 0) {
+    let item = G.floor.items[itemIdx];
+    G.player.gold += item.amount;
+    log(`💰 Sebral jsi ${item.amount} gold!`, 'log-item');
+    G.floor.items.splice(itemIdx, 1);
+  }
+  
+  // Check tile
+  let tile = G.floor.tiles[ny][nx];
+  if (tile.stairs) log('📍 Schody dolů! Stiskni > pro sestup.', 'log-info');
+  if (tile.amulet) {
+    log('✨ Našel jsi AMULET OF YENDOR!', 'log-special');
+    gameOver(true);
+    return;
+  }
+  
+  endTurn();
+}
+
+function pickup() {
+  let idx = G.floor.items.findIndex(it => it.x === G.player.x && it.y === G.player.y);
+  if (idx < 0) { log('Nic tu není.'); return; }
+  let item = G.floor.items[idx];
+  
+  if (item.type === 'weapon') {
+    if (G.player.weapon) log(`Vyměnil jsi ${G.player.weapon.name} za ${item.name}.`, 'log-item');
+    else log(`Vybavil jsi ${item.name}! (+${item.atk} ATK)`, 'log-item');
+    G.player.weapon = item;
+    G.floor.items.splice(idx, 1);
+  } else if (item.type === 'armor') {
+    if (G.player.armor) log(`Vyměnil jsi ${G.player.armor.name} za ${item.name}.`, 'log-item');
+    else log(`Vybavil jsi ${item.name}! (+${item.def} DEF)`, 'log-item');
+    G.player.armor = item;
+    G.floor.items.splice(idx, 1);
+  } else if (item.type === 'ring') {
+    G.player.ring = item;
+    log(`💍 Nasadil jsi ${item.name}!`, 'log-item');
+    G.floor.items.splice(idx, 1);
+  } else if (item.type === 'amulet') {
+    G.player.amulet = item;
+    G.player.maxHp += item.hpBonus;
+    G.player.hp += item.hpBonus;
+    log(`📿 Nasadil jsi ${item.name}! (+${item.hpBonus} HP)`, 'log-item');
+    G.floor.items.splice(idx, 1);
+  } else {
+    // Consumable — add to inventory
+    let slot = G.player.inventory.findIndex(s => s === null);
+    if (slot < 0) { log('Inventář je plný!', 'log-combat'); return; }
+    G.player.inventory[slot] = item;
+    log(`Sebral jsi ${item.name}.`, 'log-item');
+    G.floor.items.splice(idx, 1);
+  }
+  endTurn();
+}
+
+function useItem(idx) {
+  let item = G.player.inventory[idx];
+  if (!item) return;
+  
+  if (item.effect === 'heal') {
+    G.player.hp = Math.min(G.player.maxHp, G.player.hp + item.value);
+    log(`❤️ Vypil jsi ${item.name}! +${item.value} HP`, 'log-item');
+  } else if (item.effect === 'mana') {
+    if (G.player.mp !== undefined) {
+      G.player.mp = Math.min(G.player.maxMp, G.player.mp + item.value);
+      log(`💜 Vypil jsi ${item.name}! +${item.value} MP`, 'log-item');
+    } else {
+      log('Nemáš manu...', 'log-info');
+      return;
+    }
+  } else if (item.effect === 'aoe') {
+    let hit = 0;
+    for (let e of G.floor.enemies) {
+      if (!e.alive) continue;
+      let dist = Math.abs(e.x - G.player.x) + Math.abs(e.y - G.player.y);
+      if (dist <= 4) {
+        e.hp -= item.value;
+        if (e.hp <= 0) { e.alive = false; G.player.xp += e.xp; G.player.kills++; }
+        hit++;
+      }
+    }
+    log(`🔥 Scroll of Fire zasáhl ${hit} nepřátel!`, 'log-special');
+    checkLevelUp();
+  }
+  
+  G.player.inventory[idx] = null;
+  endTurn();
+}
+window.useItem = useItem;
+
+function castFireball() {
+  if (G.player.cls !== 'mage') { log('Nejsi mage!'); return; }
+  if (G.player.mp < 10) { log('Nedostatek many! (potřeba 10)', 'log-combat'); return; }
+  G.player.mp -= 10;
+  let hit = 0, killed = 0;
+  for (let e of G.floor.enemies) {
+    if (!e.alive) continue;
+    let dist = Math.abs(e.x - G.player.x) + Math.abs(e.y - G.player.y);
+    if (dist <= 5) {
+      let dmg = G.player.atk * 3 + rng(5, 15);
+      e.hp -= dmg;
+      hit++;
+      if (e.hp <= 0) { e.alive = false; G.player.xp += e.xp; G.player.kills++; killed++; }
+    }
+  }
+  log(`🔥 FIREBALL! Zasáhl ${hit} nepřátel, zabil ${killed}!`, 'log-special');
+  checkLevelUp();
+  endTurn();
+}
+
+function descend() {
+  let tile = G.floor.tiles[G.player.y][G.player.x];
+  if (!tile.stairs) { log('Tady nejsou schody.'); return; }
+  G.floorNum++;
+  log(`⬇️ Sestupuješ na floor ${G.floorNum}...`, 'log-special');
+  G.floor = generateFloor(G.floorNum);
+  G.player.x = G.floor.playerStart.x;
+  G.player.y = G.floor.playerStart.y;
+  G.seen = new Set();
+  // Regen
+  G.player.hp = Math.min(G.player.maxHp, G.player.hp + Math.floor(G.player.maxHp * 0.15));
+  if (G.player.mp !== undefined) G.player.mp = Math.min(G.player.maxMp, G.player.mp + 5);
+  render();
+}
+
+function endTurn() {
+  G.turn++;
+  // Natural regen every 10 turns
+  if (G.turn % 10 === 0) {
+    G.player.hp = Math.min(G.player.maxHp, G.player.hp + 1);
+    if (G.player.mp !== undefined) G.player.mp = Math.min(G.player.maxMp, G.player.mp + 1);
+  }
+  moveEnemies();
+  if (G.player.hp <= 0) return;
+  render();
+}
+
+function gameOver(won) {
+  let overlay = document.createElement('div');
+  overlay.className = won ? 'dead-overlay win-overlay' : 'dead-overlay';
+  overlay.innerHTML = `
+    <h1>${won ? '🏆 VÍTĚZSTVÍ!' : '💀 GAME OVER'}</h1>
+    <p>${won ? 'Získal jsi Amulet of Yendor!' : 'Dungeon tě pohltil...'}</p>
+    <p>Level: ${G.player.level} | Floor: ${G.floorNum} | Kills: ${G.player.kills} | Gold: ${G.player.gold}</p>
+    <p>Tahy: ${G.turn}</p>
+    <button onclick="location.reload()">ZNOVU</button>
+  `;
+  document.body.appendChild(overlay);
+}
+
+// === INPUT ===
+document.addEventListener('keydown', (e) => {
+  if (G.player.hp <= 0) return;
+  let key = e.key.toLowerCase();
+  
+  switch(key) {
+    case 'arrowup': case 'w': tryMove(0, -1); break;
+    case 'arrowdown': case 's': tryMove(0, 1); break;
+    case 'arrowleft': case 'a': tryMove(-1, 0); break;
+    case 'arrowright': case 'd': tryMove(1, 0); break;
+    case '.': case ',': pickup(); break;
+    case '>': descend(); break;
+    case ' ': endTurn(); break;
+    case 'f': castFireball(); break;
+    case 'e': pickup(); break;
+    case '1': useItem(0); break;
+    case '2': useItem(1); break;
+    case '3': useItem(2); break;
+    case '4': useItem(3); break;
+    case '5': useItem(4); break;
+  }
+  e.preventDefault();
+});
+
+// === START ===
+function startGame() {
+  let cs = CLASS_STATS[selectedClass];
+  G = {
+    player: {
+      x: 0, y: 0,
+      hp: cs.hp, maxHp: cs.hp,
+      mp: cs.mp > 0 ? cs.mp : undefined,
+      maxMp: cs.mp > 0 ? cs.mp : undefined,
+      atk: cs.atk, def: cs.def, spd: cs.spd,
+      level: 1, xp: 0, xpNext: 20,
+      gold: 0, kills: 0,
+      weapon: null, armor: null, ring: null, amulet: null,
+      inventory: [null, null, null, null, null],
+      cls: selectedClass
+    },
+    floorNum: 1,
+    turn: 0,
+    seen: new Set()
+  };
+  
+  G.floor = generateFloor(1);
+  G.player.x = G.floor.playerStart.x;
+  G.player.y = G.floor.playerStart.y;
+  
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+  
+  if (selectedClass === 'mage') document.getElementById('mp-block').style.display = '';
+  
+  log('🏰 Vítej v Dungeon of Ambition!', 'log-special');
+  log(`Třída: ${selectedClass.toUpperCase()}. Najdi Amulet of Yendor na floor ${FLOOR_COUNT}.`, 'log-info');
+  log('WASD = pohyb, . = sebrat, > = schody, 1-5 = itemy', 'log-info');
+  render();
+}
+window.startGame = startGame;
+window.selectClass = selectClass;
+</script>
+</body>
+</html>

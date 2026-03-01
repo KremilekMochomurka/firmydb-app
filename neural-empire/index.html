@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Empire — AI Startup Tycoon</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@300;400;600;700;900&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a27;
+  --border: #2a2a3a; --text: #e0e0f0; --dim: #6a6a8a;
+  --accent: #7c5cff; --accent2: #00e5a0; --danger: #ff4466;
+  --warn: #ffaa00; --info: #00aaff;
+}
+
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow-x: hidden; min-height: 100vh; }
+
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* INTRO */
+#intro { justify-content: center; align-items: center; text-align: center; padding: 2rem; }
+#intro h1 { font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: .5rem; letter-spacing: -2px; }
+#intro .sub { color: var(--dim); font-size: 1.1rem; margin-bottom: 2rem; font-family: 'JetBrains Mono', monospace; }
+#intro .tagline { font-size: 1.3rem; max-width: 600px; line-height: 1.6; margin-bottom: 3rem; color: var(--text); }
+.btn { background: var(--accent); color: #fff; border: none; padding: 1rem 3rem; font-size: 1.1rem; font-weight: 700; border-radius: 12px; cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,92,255,.4); }
+.btn-sm { padding: .6rem 1.5rem; font-size: .85rem; border-radius: 8px; }
+.btn-danger { background: var(--danger); }
+.btn-success { background: var(--accent2); color: #000; }
+.btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); }
+.btn-outline:hover { background: var(--accent); color: #fff; }
+.btn-warn { background: var(--warn); color: #000; }
+
+/* GAME */
+#game { padding: 0; }
+.topbar { display: flex; gap: 1rem; padding: 1rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; position: sticky; top: 0; z-index: 100; }
+.stat { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
+.stat .label { font-size: .65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); font-family: 'JetBrains Mono', monospace; }
+.stat .value { font-size: 1.1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.stat .value.money { color: var(--accent2); }
+.stat .value.rep { color: var(--accent); }
+.stat .value.tech { color: var(--info); }
+.stat .value.talent { color: var(--warn); }
+.quarter-label { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent); font-size: 1rem; margin-right: auto; }
+
+.main { display: grid; grid-template-columns: 300px 1fr 320px; gap: 0; flex: 1; min-height: 0; }
+@media (max-width: 1100px) { .main { grid-template-columns: 1fr; } }
+
+.panel { padding: 1.5rem; overflow-y: auto; max-height: calc(100vh - 60px); }
+.panel-left { background: var(--surface); border-right: 1px solid var(--border); }
+.panel-right { background: var(--surface); border-left: 1px solid var(--border); }
+.panel-center { background: var(--bg); }
+
+.card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; transition: all .2s; }
+.card:hover { border-color: var(--accent); }
+.card h3 { font-size: .9rem; margin-bottom: .5rem; }
+.card p { font-size: .8rem; color: var(--dim); line-height: 1.5; }
+
+.section-title { font-size: .7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; }
+
+.progress-bar { background: var(--surface); border-radius: 6px; height: 8px; overflow: hidden; margin: .5rem 0; }
+.progress-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
+
+.log { font-family: 'JetBrains Mono', monospace; font-size: .75rem; line-height: 1.8; }
+.log .entry { padding: 4px 0; border-bottom: 1px solid var(--border); }
+.log .entry.good { color: var(--accent2); }
+.log .entry.bad { color: var(--danger); }
+.log .entry.info { color: var(--info); }
+.log .entry.warn { color: var(--warn); }
+
+.decision-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px); }
+.decision-box { background: var(--surface); border: 1px solid var(--accent); border-radius: 16px; padding: 2rem; max-width: 550px; width: 90%; }
+.decision-box h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+.decision-box .desc { color: var(--dim); font-size: .9rem; margin-bottom: 1.5rem; line-height: 1.6; }
+.decision-box .options { display: flex; flex-direction: column; gap: .8rem; }
+.option-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; text-align: left; transition: all .2s; }
+.option-btn:hover { border-color: var(--accent); background: rgba(124,92,255,.1); }
+.option-btn .opt-title { font-weight: 700; margin-bottom: .3rem; }
+.option-btn .opt-desc { font-size: .8rem; color: var(--dim); }
+.option-btn .opt-cost { font-size: .75rem; color: var(--warn); margin-top: .3rem; font-family: 'JetBrains Mono', monospace; }
+
+.hidden { display: none !important; }
+
+.emoji { font-size: 1.5rem; margin-bottom: .5rem; display: block; }
+
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.product-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all .2s; text-align: center; }
+.product-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+.product-card.locked { opacity: .4; pointer-events: none; }
+.product-card .p-emoji { font-size: 2rem; }
+.product-card .p-name { font-weight: 700; font-size: .85rem; margin: .3rem 0; }
+.product-card .p-rev { font-size: .7rem; color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+
+.competitor { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; padding: .8rem; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border); }
+.competitor .c-name { font-weight: 700; font-size: .85rem; }
+.competitor .c-val { font-size: .7rem; color: var(--dim); font-family: 'JetBrains Mono', monospace; }
+
+.milestone { padding: .5rem .8rem; background: var(--surface2); border-radius: 8px; margin-bottom: .5rem; font-size: .8rem; border-left: 3px solid var(--border); }
+.milestone.done { border-left-color: var(--accent2); opacity: .6; }
+.milestone.active { border-left-color: var(--accent); }
+
+.endscreen { justify-content: center; align-items: center; text-align: center; padding: 2rem; }
+.endscreen h1 { font-size: 3rem; margin-bottom: 1rem; }
+.endscreen .score { font-size: 5rem; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.tab-bar { display: flex; gap: 0; margin-bottom: 1rem; background: var(--surface); border-radius: 10px; overflow: hidden; }
+.tab { flex: 1; padding: .7rem; text-align: center; font-size: .75rem; font-weight: 600; cursor: pointer; transition: all .2s; text-transform: uppercase; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; }
+.tab.active { background: var(--accent); color: #fff; }
+.tab:hover:not(.active) { background: var(--surface2); }
+
+.hire-card { display: flex; justify-content: space-between; align-items: center; padding: .8rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: .6rem; }
+.hire-card .h-info { }
+.hire-card .h-name { font-weight: 700; font-size: .85rem; }
+.hire-card .h-role { font-size: .7rem; color: var(--dim); }
+.hire-card .h-cost { font-size: .7rem; color: var(--warn); font-family: 'JetBrains Mono', monospace; }
+
+.notif { position: fixed; top: 80px; right: 20px; background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 1rem 1.5rem; z-index: 500; animation: slideIn .3s ease; max-width: 350px; }
+@keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div id="intro" class="screen active">
+  <h1>NEURAL EMPIRE</h1>
+  <div class="sub">AI Startup Tycoon v1.0</div>
+  <div class="tagline">
+    Rok 2025. Máš notebook, mass vizi a 500 000 Kč. Postav AI impérium od garáže po IPO.<br><br>
+    <span style="color:var(--dim); font-size:.9rem;">Strategické rozhodování • Hiring • Product development • Fundraising • Konkurence</span>
+  </div>
+  <button class="btn" onclick="startGame()">⚡ Založit firmu</button>
+</div>
+
+<div id="game" class="screen">
+  <div class="topbar">
+    <div class="quarter-label" id="quarterLabel">Q1 2025</div>
+    <div class="stat"><span class="label">Cash</span><span class="value money" id="cashDisplay">500K</span></div>
+    <div class="stat"><span class="label">MRR</span><span class="value money" id="mrrDisplay">0</span></div>
+    <div class="stat"><span class="label">Reputace</span><span class="value rep" id="repDisplay">5</span></div>
+    <div class="stat"><span class="label">Tech</span><span class="value tech" id="techDisplay">1</span></div>
+    <div class="stat"><span class="label">Tým</span><span class="value talent" id="teamDisplay">1</span></div>
+    <div class="stat"><span class="label">Valuation</span><span class="value" id="valDisplay">1M</span></div>
+    <button class="btn btn-sm" onclick="nextQuarter()" id="nextBtn">Další kvartál →</button>
+  </div>
+  <div class="main">
+    <div class="panel panel-left">
+      <div class="section-title">📊 Přehled</div>
+      <div class="card">
+        <h3>💰 Finance</h3>
+        <div style="display:flex; justify-content:space-between; font-size:.8rem; margin-top:.5rem;">
+          <span>Burn rate:</span><span id="burnDisplay" style="color:var(--danger)">50K/Q</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:.8rem;">
+          <span>Runway:</span><span id="runwayDisplay">10 Q</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="runwayBar" style="width:100%; background:var(--accent2);"></div></div>
+      </div>
+      <div class="card">
+        <h3>🏢 Kancelář</h3>
+        <p id="officeDisplay">Garáž v Rackové (free)</p>
+      </div>
+      <div class="card">
+        <h3>🏆 Milníky</h3>
+        <div id="milestones"></div>
+      </div>
+      <div class="section-title" style="margin-top:1rem;">⚔️ Konkurence</div>
+      <div id="competitors"></div>
+    </div>
+
+    <div class="panel panel-center">
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('products')">Produkty</div>
+        <div class="tab" onclick="switchTab('team')">Tým</div>
+        <div class="tab" onclick="switchTab('strategy')">Strategie</div>
+      </div>
+
+      <div id="tab-products">
+        <div class="section-title">🚀 Produkty & Služby</div>
+        <div class="product-grid" id="productGrid"></div>
+        <div style="margin-top:1.5rem;">
+          <div class="section-title">📈 Aktivní produkty</div>
+          <div id="activeProducts"><p style="color:var(--dim); font-size:.85rem;">Zatím žádné produkty. Vyber si první projekt!</p></div>
+        </div>
+      </div>
+
+      <div id="tab-team" class="hidden">
+        <div class="section-title">👥 Najímání</div>
+        <div id="hireList"></div>
+        <div class="section-title" style="margin-top:1.5rem;">📋 Tvůj tým</div>
+        <div id="teamList"></div>
+      </div>
+
+      <div id="tab-strategy" class="hidden">
+        <div class="section-title">🧠 Strategické akce</div>
+        <div id="strategyList"></div>
+      </div>
+    </div>
+
+    <div class="panel panel-right">
+      <div class="section-title">📜 Event Log</div>
+      <div class="log" id="eventLog"></div>
+    </div>
+  </div>
+</div>
+
+<div id="end" class="screen endscreen">
+  <h1 id="endTitle"></h1>
+  <div class="score" id="endScore"></div>
+  <p id="endDesc" style="color:var(--dim); max-width:500px; margin:1rem auto 2rem; line-height:1.6;"></p>
+  <button class="btn" onclick="location.reload()">🔄 Hrát znovu</button>
+</div>
+
+<div id="decisionModal" class="decision-modal hidden"></div>
+
+<script>
+// ===== GAME STATE =====
+let G = {
+  cash: 500000, mrr: 0, rep: 5, tech: 1, team: 1,
+  quarter: 1, year: 2025, burn: 50000,
+  office: 'garage', products: [], hires: [],
+  milestones: [], valuation: 1000000,
+  decisions_made: 0, products_launched: 0,
+  funding_rounds: 0, acquired: false,
+  log: [], teamMembers: [{name:'Ty (CEO)', role:'Founder', cost:0}],
+};
+
+const PRODUCTS = [
+  {id:'chatbot', name:'AI Chatbot', emoji:'🤖', cost:100000, techReq:1, mrrBase:15000, dev:2, desc:'Zákaznický chatbot pro e-shopy'},
+  {id:'analytics', name:'AI Analytics', emoji:'📊', cost:150000, techReq:2, mrrBase:25000, dev:3, desc:'Prediktivní analytika pro firmy'},
+  {id:'voice', name:'Voice Agent', emoji:'🎙️', cost:200000, techReq:3, mrrBase:40000, dev:3, desc:'AI telefonní agent'},
+  {id:'copilot', name:'Code Copilot', emoji:'💻', cost:300000, techReq:4, mrrBase:60000, dev:4, desc:'AI programátorský asistent'},
+  {id:'vision', name:'Computer Vision', emoji:'👁️', cost:250000, techReq:5, mrrBase:50000, dev:3, desc:'Průmyslová inspekce obrazem'},
+  {id:'autonomous', name:'Autonomní Agent', emoji:'🧠', cost:500000, techReq:7, mrrBase:100000, dev:5, desc:'Plně autonomní AI worker'},
+  {id:'platform', name:'AI Platforma', emoji:'🌐', cost:800000, techReq:8, mrrBase:200000, dev:6, desc:'End-to-end AI infrastruktura'},
+  {id:'agi', name:'Projekt AGI', emoji:'⚡', cost:2000000, techReq:10, mrrBase:500000, dev:8, desc:'Moonshot — obecná umělá inteligence'},
+];
+
+const HIRES = [
+  {id:'dev_jr', name:'Junior Dev', role:'Vývojář', cost:40000, techBoost:.3, cap:5},
+  {id:'dev_sr', name:'Senior Dev', role:'Vývojář', cost:80000, techBoost:.7, cap:3},
+  {id:'ml_eng', name:'ML Engineer', role:'AI/ML', cost:100000, techBoost:1, cap:3},
+  {id:'sales', name:'Sales Rep', role:'Obchod', cost:50000, techBoost:0, mrrBoost:.15, cap:4},
+  {id:'marketer', name:'Marketér', role:'Marketing', cost:45000, techBoost:0, repBoost:.5, cap:2},
+  {id:'cto', name:'CTO', role:'Vedení', cost:150000, techBoost:1.5, cap:1},
+  {id:'cfo', name:'CFO', role:'Vedení', cost:120000, techBoost:0, burnReduce:.1, cap:1},
+  {id:'researcher', name:'AI Researcher', role:'R&D', cost:130000, techBoost:2, cap:2},
+];
+
+const STRATEGIES = [
+  {id:'pivot', name:'Pivot produktu', desc:'Změň zaměření jednoho produktu (+20% MRR, -1 kvartál)', cost:100000, action:'pivot'},
+  {id:'conference', name:'AI Konference', desc:'Vystup na konferenci (+3 rep)', cost:80000, action:'conference'},
+  {id:'patent', name:'Patent', desc:'Chráň svůj tech (+2 rep, +1 tech)', cost:200000, action:'patent'},
+  {id:'acquisition', name:'Kup startup', desc:'Akvirace malého startupu (+2 tech, +30K MRR)', cost:500000, techReq:4, action:'acquire'},
+  {id:'fundraise_seed', name:'Seed Round', desc:'Prodej 15% equity za cash', cost:0, action:'seed', oneTime:true},
+  {id:'fundraise_a', name:'Series A', desc:'Prodej 20% equity za velký cash', cost:0, techReq:5, action:'seriesA', oneTime:true},
+  {id:'ipo', name:'IPO 🚀', desc:'Jdi na burzu. Finální tah.', cost:0, techReq:9, action:'ipo', oneTime:true},
+  {id:'rd', name:'R&D Sprint', desc:'Intenzivní výzkum (+2 tech)', cost:200000, action:'rd'},
+  {id:'hackathon', name:'Hackathon', desc:'Uspořádej hackathon (+1 rep, +1 tech, šance na talent)', cost:50000, action:'hackathon'},
+  {id:'office_cowork', name:'Coworking Space', desc:'Přesuň se do coworkingu (-10K burn, +1 rep)', cost:60000, action:'office_cowork'},
+  {id:'office_hq', name:'HQ Kancelář', desc:'Vlastní kancelář (+3 rep, prestiž)', cost:300000, techReq:3, action:'office_hq'},
+];
+
+const MILESTONES = [
+  {id:'first_product', name:'První produkt', check: g => g.products_launched >= 1},
+  {id:'mrr_50k', name:'MRR 50K', check: g => g.mrr >= 50000},
+  {id:'team_5', name:'Tým 5+', check: g => g.team >= 5},
+  {id:'mrr_200k', name:'MRR 200K', check: g => g.mrr >= 200000},
+  {id:'tech_5', name:'Tech Level 5', check: g => g.tech >= 5},
+  {id:'million', name:'Milionový cash', check: g => g.cash >= 1000000},
+  {id:'rep_30', name:'Reputace 30+', check: g => g.rep >= 30},
+  {id:'tech_10', name:'Tech Level 10', check: g => g.tech >= 10},
+  {id:'mrr_500k', name:'MRR 500K', check: g => g.mrr >= 500000},
+  {id:'ipo', name:'IPO', check: g => g.milestones.includes('ipo_done')},
+];
+
+const COMPETITORS = [
+  {name:'DeepCore AI', emoji:'🔴', power:3, growth:.5},
+  {name:'NovaMind', emoji:'🟡', power:2, growth:.7},
+  {name:'SynapticLabs', emoji:'🔵', power:4, growth:.3},
+];
+
+const RANDOM_EVENTS = [
+  {name:'💥 GPU shortage', desc:'Ceny GPU vyletěly. Burn rate +20% na 2 kvartály.', effect: g => { g.burn *= 1.2; return 'Burn rate vzrostl o 20%!'; }},
+  {name:'🏆 Výhra v soutěži', desc:'Tvůj produkt vyhrál AI startup competition!', effect: g => { g.rep += 5; g.cash += 100000; return '+5 rep, +100K cash!'; }},
+  {name:'📰 Mediální pozornost', desc:'TechCrunch napsal článek o tvé firmě.', effect: g => { g.rep += 3; g.mrr = Math.floor(g.mrr * 1.1); return '+3 rep, +10% MRR!'; }},
+  {name:'🐛 Critical Bug', desc:'Velký bug v produkci. Zákazníci odcházejí.', effect: g => { g.mrr = Math.floor(g.mrr * .85); g.rep -= 2; return '-15% MRR, -2 rep!'; }},
+  {name:'🤝 Partnerství', desc:'Velká firma chce integrovat tvůj produkt.', effect: g => { g.mrr += 30000; g.rep += 2; return '+30K MRR, +2 rep!'; }},
+  {name:'💸 Zákazník bankrotuje', desc:'Tvůj největší zákazník zkrachoval.', effect: g => { g.mrr = Math.floor(g.mrr * .9); return '-10% MRR'; }},
+  {name:'🧑‍💻 Virální tweet', desc:'Tvůj tweet o AI zažil virální moment.', effect: g => { g.rep += 4; return '+4 rep!'; }},
+  {name:'⚖️ Regulace', desc:'EU přijala novou AI regulaci. Náklady na compliance.', effect: g => { g.cash -= 100000; return '-100K na compliance'; }},
+  {name:'🚀 Product Hunt #1', desc:'Tvůj produkt je #1 na Product Hunt!', effect: g => { g.mrr += 20000; g.rep += 5; return '+20K MRR, +5 rep!'; }},
+  {name:'👤 Key hire odchází', desc:'Jeden z tvých lidí dostal lepší nabídku a odešel.', effect: g => { if(g.teamMembers.length > 1) { let i = 1 + Math.floor(Math.random()*(g.teamMembers.length-1)); let m = g.teamMembers.splice(i,1)[0]; g.team--; g.burn -= m.cost; return `${m.name} odešel!`; } return 'Nikdo neodešel.'; }},
+  {name:'🎯 Enterprise deal', desc:'Velký enterprise zákazník podepsal roční smlouvu!', effect: g => { g.cash += 300000; g.mrr += 25000; return '+300K cash, +25K MRR!'; }},
+  {name:'🌪️ Competitor drama', desc:'DeepCore AI měl datový únik. Zákazníci přecházejí k tobě.', effect: g => { g.mrr += 15000; g.rep += 2; return '+15K MRR, +2 rep!'; }},
+];
+
+const DECISIONS = [
+  {
+    quarter: 2, name: '🤔 Investor knock', desc: 'Angel investor ti nabízí 300K za 10% firmy. Co uděláš?',
+    options: [
+      {text:'Přijmout', desc:'Cash injection, ale ztratíš equity.', effect: g => { g.cash += 300000; addLog('Přijal jsi angel investici: +300K za 10% equity','good'); }},
+      {text:'Odmítnout', desc:'Zůstaneš 100% vlastník.', effect: g => { g.rep += 2; addLog('Odmítl jsi investora — hustle mode 💪','info'); }},
+    ]
+  },
+  {
+    quarter: 4, name: '🏢 Apertia nabídka', desc: 'Tvůj ex-zaměstnavatel Apertia ti nabízí partnerství. Získáš přístup k jejich klientům, ale musíš sdílet tech.',
+    options: [
+      {text:'Partnerství', desc:'+50K MRR, -2 tech (sdílíš IP)', effect: g => { g.mrr += 50000; g.tech = Math.max(1, g.tech-2); addLog('Partnerství s Apertia — trade-off za klienty','warn'); }},
+      {text:'Solo cesta', desc:'+3 rep za nezávislost', effect: g => { g.rep += 3; addLog('Zůstáváš nezávislý. Respect. 🫡','good'); }},
+    ]
+  },
+  {
+    quarter: 6, name: '🌍 Expanze', desc: 'Máš šanci expandovat do Německa. Velký trh, ale velké náklady.',
+    options: [
+      {text:'Expandovat', desc:'-400K, ale MRR ×1.5 za 2Q', cost:400000, effect: g => { if(g.cash >= 400000) { g.cash -= 400000; g.mrr = Math.floor(g.mrr * 1.5); addLog('Expanze do DE — MRR ×1.5! 🇩🇪','good'); } else { addLog('Nemáš dost cashe na expanzi!','bad'); }}},
+      {text:'Fokus na ČR', desc:'+2 rep, stabilita', effect: g => { g.rep += 2; addLog('Fokus na domácí trh — solid base','info'); }},
+    ]
+  },
+  {
+    quarter: 8, name: '🔥 Acqui-hire nabídka', desc: 'Google ti nabízí $2M za tvůj tým a tech. Konec firmy, ale jistota.',
+    options: [
+      {text:'Prodat', desc:'Game over — ale s $2M v kapse', effect: g => { g.cash += 50000000; g.acquired = true; endGame('acquired'); }},
+      {text:'Odmítnout', desc:'Stay hungry. +5 rep, +2 tech', effect: g => { g.rep += 5; g.tech += 2; addLog('Odmítl jsi Google. Legenda. 🐐','good'); }},
+    ]
+  },
+  {
+    quarter: 10, name: '⚡ AI Boom', desc: 'Trh exploduje. Můžeš agresivně najímat, nebo si udržet disciplínu.',
+    options: [
+      {text:'Agresivní růst', desc:'-500K, +3 tech, +100K MRR', cost:500000, effect: g => { if(g.cash >= 500000) { g.cash -= 500000; g.tech += 3; g.mrr += 100000; addLog('All-in na růst! 🚀','good'); } else { addLog('Nemáš na agresivní růst!','bad'); }}},
+      {text:'Disciplína', desc:'+3 rep, burn -20%', effect: g => { g.rep += 3; g.burn = Math.floor(g.burn * .8); addLog('Disciplína > hype. Smart move.','info'); }},
+    ]
+  },
+];
+
+function fmt(n) {
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return Math.floor(n/1e3) + 'K';
+  return n.toString();
+}
+
+function addLog(text, type='info') {
+  G.log.unshift({text, type, q: `Q${((G.quarter-1)%4)+1} ${G.year + Math.floor((G.quarter-1)/4)}`});
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('eventLog');
+  el.innerHTML = G.log.slice(0,50).map(l => `<div class="entry ${l.type}"><span style="color:var(--dim)">[${l.q}]</span> ${l.text}</div>`).join('');
+}
+
+function updateUI() {
+  const y = G.year + Math.floor((G.quarter-1)/4);
+  const q = ((G.quarter-1) % 4) + 1;
+  document.getElementById('quarterLabel').textContent = `Q${q} ${y}`;
+  document.getElementById('cashDisplay').textContent = fmt(G.cash);
+  document.getElementById('mrrDisplay').textContent = fmt(G.mrr);
+  document.getElementById('repDisplay').textContent = Math.floor(G.rep);
+  document.getElementById('techDisplay').textContent = G.tech.toFixed(1);
+  document.getElementById('teamDisplay').textContent = G.team;
+
+  G.valuation = Math.floor((G.mrr * 40) + (G.rep * 50000) + (G.tech * 100000) + (G.cash * .5));
+  document.getElementById('valDisplay').textContent = fmt(G.valuation);
+
+  G.burn = G.teamMembers.reduce((s,m) => s + m.cost, 0) + 30000;
+  document.getElementById('burnDisplay').textContent = fmt(G.burn) + '/Q';
+  const runway = G.mrr >= G.burn ? '∞' : G.cash > 0 ? Math.floor(G.cash / Math.max(1, G.burn - G.mrr)) + ' Q' : '0 Q';
+  document.getElementById('runwayDisplay').textContent = runway;
+  const rp = runway === '∞' ? 100 : Math.min(100, (parseInt(runway) || 0) * 10);
+  document.getElementById('runwayBar').style.width = rp + '%';
+  document.getElementById('runwayBar').style.background = rp > 50 ? 'var(--accent2)' : rp > 20 ? 'var(--warn)' : 'var(--danger)';
+
+  document.getElementById('officeDisplay').textContent =
+    G.office === 'garage' ? 'Garáž v Rackové (free)' :
+    G.office === 'cowork' ? 'Coworking Zlín' : 'HQ Kancelář Praha';
+
+  renderProducts();
+  renderTeam();
+  renderStrategies();
+  renderMilestones();
+  renderCompetitors();
+  checkMilestones();
+}
+
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = PRODUCTS.map(p => {
+    const owned = G.products.find(x => x.id === p.id);
+    const locked = G.tech < p.techReq;
+    return `<div class="product-card ${locked ? 'locked' : ''} ${owned ? 'owned' : ''}" onclick="${owned || locked ? '' : `buyProduct('${p.id}')`}">
+      <div class="p-emoji">${p.emoji}</div>
+      <div class="p-name">${p.name}</div>
+      <div style="font-size:.7rem;color:var(--dim)">${p.desc}</div>
+      <div class="p-rev">${owned ? '✅ Aktivní — '+fmt(owned.mrr)+'/Q' : locked ? '🔒 Tech '+p.techReq : fmt(p.cost)+' | +'+fmt(p.mrrBase)+'/Q'}</div>
+    </div>`;
+  }).join('');
+
+  const active = document.getElementById('activeProducts');
+  if (G.products.length) {
+    active.innerHTML = G.products.map(p => {
+      const base = PRODUCTS.find(x => x.id === p.id);
+      const progress = Math.min(100, (p.devDone / p.devTotal) * 100);
+      return `<div class="card">
+        <h3>${base.emoji} ${base.name} ${p.launched ? '<span style="color:var(--accent2)">LIVE</span>' : '<span style="color:var(--warn)">Dev: Q'+p.devLeft+'</span>'}</h3>
+        ${!p.launched ? `<div class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:var(--accent)"></div></div>` : ''}
+        <p>MRR: ${fmt(p.mrr)}/Q ${p.launched ? '| Churn: '+(p.churn*100).toFixed(0)+'%' : ''}</p>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderTeam() {
+  document.getElementById('hireList').innerHTML = HIRES.map(h => {
+    const count = G.teamMembers.filter(m => m.hireId === h.id).length;
+    const maxed = count >= h.cap;
+    return `<div class="hire-card">
+      <div class="h-info">
+        <div class="h-name">${h.name} ${maxed ? '(MAX)' : ''}</div>
+        <div class="h-role">${h.role} | Tech +${h.techBoost}${h.mrrBoost ? ' | MRR +'+Math.floor(h.mrrBoost*100)+'%' : ''}${h.repBoost ? ' | Rep +'+h.repBoost : ''}${h.burnReduce ? ' | Burn -'+Math.floor(h.burnReduce*100)+'%' : ''}</div>
+        <div class="h-cost">${fmt(h.cost)}/Q | Hired: ${count}/${h.cap}</div>
+      </div>
+      <button class="btn btn-sm ${maxed ? 'btn-outline' : 'btn-success'}" onclick="hire('${h.id}')" ${maxed ? 'disabled' : ''}>Najmout</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('teamList').innerHTML = G.teamMembers.map((m,i) => `
+    <div class="hire-card">
+      <div class="h-info"><div class="h-name">${m.name}</div><div class="h-role">${m.role} | ${fmt(m.cost)}/Q</div></div>
+      ${i > 0 ? `<button class="btn btn-sm btn-danger" onclick="fire(${i})">Vyhodit</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderStrategies() {
+  document.getElementById('strategyList').innerHTML = STRATEGIES.map(s => {
+    const locked = s.techReq && G.tech < s.techReq;
+    const done = s.oneTime && G.milestones.includes(s.id+'_done');
+    return `<div class="card" style="${locked||done ? 'opacity:.4' : 'cursor:pointer'}" onclick="${locked||done ? '' : `doStrategy('${s.id}')`}">
+      <h3>${s.name} ${locked ? '🔒 Tech '+s.techReq : ''} ${done ? '✅' : ''}</h3>
+      <p>${s.desc}</p>
+      ${s.cost ? `<p style="color:var(--warn);font-family:JetBrains Mono;font-size:.75rem;margin-top:.3rem">${fmt(s.cost)}</p>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderMilestones() {
+  document.getElementById('milestones').innerHTML = MILESTONES.map(m => {
+    const done = m.check(G);
+    return `<div class="milestone ${done ? 'done' : ''}">${done ? '✅' : '⬜'} ${m.name}</div>`;
+  }).join('');
+}
+
+function renderCompetitors() {
+  document.getElementById('competitors').innerHTML = COMPETITORS.map(c => `
+    <div class="competitor">
+      <span style="font-size:1.5rem">${c.emoji}</span>
+      <div><div class="c-name">${c.name}</div><div class="c-val">Power: ${c.power.toFixed(1)}</div></div>
+    </div>
+  `).join('');
+}
+
+function checkMilestones() {
+  MILESTONES.forEach(m => {
+    if (m.check(G) && !G.milestones.includes(m.id)) {
+      G.milestones.push(m.id);
+      addLog(`🏆 Milník dosažen: ${m.name}`, 'good');
+      notify(`🏆 ${m.name}`);
+    }
+  });
+}
+
+function notify(text) {
+  const n = document.createElement('div');
+  n.className = 'notif';
+  n.textContent = text;
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 3000);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  ['products','team','strategy'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
+  });
+}
+
+function buyProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (G.cash < p.cost) { addLog(`Nemáš dost cashe na ${p.name}!`, 'bad'); return; }
+  if (G.products.find(x => x.id === id)) return;
+  G.cash -= p.cost;
+  G.products.push({id: p.id, mrr: 0, mrrBase: p.mrrBase, devLeft: p.dev, devTotal: p.dev, devDone: 0, launched: false, churn: .05});
+  G.products_launched++;
+  addLog(`🚀 Začal vývoj: ${p.name} (${p.dev}Q do launche)`, 'info');
+  updateUI();
+}
+
+function hire(id) {
+  const h = HIRES.find(x => x.id === id);
+  const count = G.teamMembers.filter(m => m.hireId === id).length;
+  if (count >= h.cap) return;
+  G.teamMembers.push({name: h.name + ' #' + (count+1), role: h.role, cost: h.cost, hireId: id, techBoost: h.techBoost, mrrBoost: h.mrrBoost || 0, repBoost: h.repBoost || 0, burnReduce: h.burnReduce || 0});
+  G.team++;
+  addLog(`👤 Najat: ${h.name}`, 'good');
+  updateUI();
+}
+
+function fire(idx) {
+  const m = G.teamMembers[idx];
+  G.teamMembers.splice(idx, 1);
+  G.team--;
+  addLog(`👋 Propuštěn: ${m.name}`, 'warn');
+  updateUI();
+}
+
+function doStrategy(id) {
+  const s = STRATEGIES.find(x => x.id === id);
+  if (s.cost && G.cash < s.cost) { addLog(`Nemáš dost cashe!`, 'bad'); return; }
+  if (s.cost) G.cash -= s.cost;
+
+  switch(s.action) {
+    case 'conference': G.rep += 3; addLog('🎤 Vystoupil jsi na konferenci. +3 rep','good'); break;
+    case 'patent': G.rep += 2; G.tech += 1; addLog('📄 Patent zaregistrován! +2 rep, +1 tech','good'); break;
+    case 'acquire': G.tech += 2; G.mrr += 30000; addLog('🏢 Akvizice startupu! +2 tech, +30K MRR','good'); break;
+    case 'rd': G.tech += 2; addLog('🔬 R&D sprint! +2 tech','good'); break;
+    case 'hackathon':
+      G.rep += 1; G.tech += 1;
+      if (Math.random() > .5) { hire('dev_jr'); addLog('🏅 Hackathon úspěch! +1 rep, +1 tech, +1 dev','good'); }
+      else { addLog('🏅 Hackathon! +1 rep, +1 tech','good'); }
+      break;
+    case 'office_cowork': G.office = 'cowork'; G.rep += 1; addLog('🏢 Přestěhováno do coworkingu','info'); break;
+    case 'office_hq': G.office = 'hq'; G.rep += 3; addLog('🏢 Nové HQ! +3 rep','good'); break;
+    case 'seed':
+      const seedVal = G.valuation;
+      const seedCash = Math.floor(seedVal * .15);
+      G.cash += seedCash;
+      G.funding_rounds++;
+      G.milestones.push('fundraise_seed_done');
+      addLog(`💰 Seed round: +${fmt(seedCash)} za 15% equity!`,'good');
+      break;
+    case 'seriesA':
+      const aVal = G.valuation;
+      const aCash = Math.floor(aVal * .20);
+      G.cash += aCash;
+      G.funding_rounds++;
+      G.milestones.push('fundraise_a_done');
+      addLog(`💰 Series A: +${fmt(aCash)} za 20% equity!`,'good');
+      break;
+    case 'ipo':
+      G.milestones.push('ipo_done');
+      endGame('ipo');
+      return;
+    case 'pivot':
+      if (G.products.length) {
+        G.products.forEach(p => { if(p.launched) p.mrr = Math.floor(p.mrr * 1.2); });
+        addLog('🔄 Pivot! Aktivní produkty +20% MRR','good');
+      }
+      break;
+  }
+  updateUI();
+}
+
+function showDecision(d) {
+  const modal = document.getElementById('decisionModal');
+  modal.classList.remove('hidden');
+  modal.innerHTML = `<div class="decision-box">
+    <h2>${d.name}</h2>
+    <div class="desc">${d.desc}</div>
+    <div class="options">
+      ${d.options.map((o,i) => `<div class="option-btn" onclick="resolveDecision(${G.quarter},${i})">
+        <div class="opt-title">${o.text}</div>
+        <div class="opt-desc">${o.desc}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function resolveDecision(q, idx) {
+  const d = DECISIONS.find(x => x.quarter === q);
+  if (d) {
+    d.options[idx].effect(G);
+    G.decisions_made++;
+  }
+  document.getElementById('decisionModal').classList.add('hidden');
+  updateUI();
+}
+
+function nextQuarter() {
+  // Apply team effects
+  let techGain = 0, mrrMult = 1, repGain = 0, burnMult = 1;
+  G.teamMembers.forEach(m => {
+    techGain += (m.techBoost || 0) * .1;
+    mrrMult += (m.mrrBoost || 0);
+    repGain += (m.repBoost || 0) * .1;
+    burnMult -= (m.burnReduce || 0);
+  });
+  G.tech = Math.round((G.tech + techGain) * 10) / 10;
+  G.rep += repGain;
+
+  // Product development
+  G.products.forEach(p => {
+    if (!p.launched) {
+      p.devLeft--;
+      p.devDone++;
+      if (p.devLeft <= 0) {
+        p.launched = true;
+        p.mrr = p.mrrBase;
+        addLog(`🎉 ${PRODUCTS.find(x=>x.id===p.id).name} je LIVE! +${fmt(p.mrrBase)} MRR`, 'good');
+      }
+    } else {
+      // Growth & churn
+      const growth = 1 + (Math.random() * .15) + (G.rep * .002);
+      p.mrr = Math.floor(p.mrr * growth * mrrMult * (1 - p.churn));
+    }
+  });
+
+  G.mrr = G.products.reduce((s, p) => s + (p.launched ? p.mrr : 0), 0);
+  G.cash += G.mrr;
+  G.cash -= Math.floor(G.burn * burnMult);
+
+  // Competitors grow
+  COMPETITORS.forEach(c => { c.power += c.growth * (1 + Math.random() * .3); });
+
+  G.quarter++;
+
+  // Random event (40% chance)
+  if (Math.random() < .4) {
+    const ev = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+    const result = ev.effect(G);
+    addLog(`${ev.name}: ${result}`, ev.name.includes('💥') || ev.name.includes('🐛') || ev.name.includes('💸') || ev.name.includes('⚖️') || ev.name.includes('👤') ? 'bad' : 'good');
+  }
+
+  // Story decisions
+  const decision = DECISIONS.find(d => d.quarter === G.quarter);
+  if (decision) showDecision(decision);
+
+  // Game over check
+  if (G.cash <= 0 && G.mrr < G.burn) {
+    endGame('bankrupt');
+    return;
+  }
+
+  // Auto-end at Q20
+  if (G.quarter >= 20 && !G.milestones.includes('ipo_done')) {
+    endGame('timeout');
+    return;
+  }
+
+  addLog(`— Nový kvartál —`, 'info');
+  updateUI();
+}
+
+function endGame(reason) {
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('end').classList.add('active');
+
+  const score = Math.floor(G.valuation / 1000);
+
+  if (reason === 'ipo') {
+    document.getElementById('endTitle').textContent = '🚀 IPO! Legenda!';
+    document.getElementById('endDesc').textContent = `Dotáhl jsi to od garáže v Rackové po burzu. Neural Empire valuace: ${fmt(G.valuation)}. ${G.team} lidí v týmu, tech level ${G.tech.toFixed(1)}. ENTJ energy zvítězila.`;
+  } else if (reason === 'acquired') {
+    document.getElementById('endTitle').textContent = '💰 Acquired by Google';
+    document.getElementById('endDesc').textContent = `Prodal jsi firmu. Golden handcuffs, ale $2M v kapse. Ne špatný exit pro kluka z Rackové.`;
+  } else if (reason === 'bankrupt') {
+    document.getElementById('endTitle').textContent = '💀 Bankrot';
+    document.getElementById('endDesc').textContent = `Cash vyschlo. Runway = 0. Ale každý velký founder jednou padl. Lessons learned. Try again.`;
+  } else {
+    document.getElementById('endTitle').textContent = '⏰ Čas vypršel';
+    document.getElementById('endDesc').textContent = `5 let je pryč. Valuace: ${fmt(G.valuation)}. ${G.milestones.length} milníků. Solidní run, ale IPO se nekonalo.`;
+  }
+
+  document.getElementById('endScore').textContent = fmt(score) + ' pts';
+}
+
+function startGame() {
+  document.getElementById('intro').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  addLog('🎬 Neural Empire založeno v garáži v Rackové.', 'good');
+  addLog('💰 Počáteční kapitál: 500K CZK', 'info');
+  addLog('🎯 Cíl: Dostaň se k IPO do 5 let!', 'info');
+  updateUI();
+}
+</script>
+</body>
+</html>

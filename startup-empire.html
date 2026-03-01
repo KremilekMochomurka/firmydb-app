@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Startup Empire 🚀</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--panel:#12121a;--border:#1e1e2e;--text:#e0e0e0;--dim:#666;--cyan:#00e5ff;--mag:#ff00e5;--green:#00ff88;--red:#ff4455;--yellow:#ffcc00;--orange:#ff8800}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+.hidden{display:none!important}
+button{background:var(--panel);color:var(--text);border:1px solid var(--border);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .2s}
+button:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button.primary{background:linear-gradient(135deg,#00e5ff22,#ff00e522);border-color:var(--cyan)}
+button.danger{border-color:var(--red);color:var(--red)}
+button.danger:hover{background:var(--red);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--mag));opacity:.5}
+.panel h3{font-size:14px;color:var(--cyan);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.glow{text-shadow:0 0 10px currentColor}
+
+/* Title Screen */
+#title-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;animation:fadeIn .8s}
+#title-screen h1{font-size:4em;background:linear-gradient(135deg,var(--cyan),var(--mag));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
+#title-screen .subtitle{color:var(--dim);font-size:1.1em;margin-bottom:40px}
+.menu-btn{display:block;width:280px;padding:14px;margin:8px auto;font-size:16px;border-radius:8px}
+.difficulty-select{display:flex;gap:10px;margin:20px 0;justify-content:center}
+.diff-btn{padding:12px 24px;border-radius:8px;font-weight:600}
+.diff-btn.selected{border-color:var(--cyan);background:var(--cyan);color:var(--bg)}
+
+/* Game Layout */
+#game-screen{display:none;height:100vh;grid-template-columns:280px 1fr 300px;grid-template-rows:50px 1fr 180px;gap:8px;padding:8px}
+#game-screen.active{display:grid}
+.top-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--panel);border-radius:8px;border:1px solid var(--border)}
+.top-bar .stats{display:flex;gap:24px;font-size:13px}
+.top-bar .stat{display:flex;align-items:center;gap:6px}
+.top-bar .stat .label{color:var(--dim)}
+.top-bar .stat .value{font-weight:700}
+.money .value{color:var(--green)}
+.valuation .value{color:var(--cyan)}
+.reputation .value{color:var(--yellow)}
+.turn-info{font-size:13px;color:var(--dim)}
+.turn-info span{color:var(--cyan);font-weight:700}
+
+/* Left Panel */
+.left-panel{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.emp-card{background:#1a1a2e;border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;transition:all .2s}
+.emp-card:hover{border-color:var(--cyan)}
+.emp-card .name{font-weight:700;color:var(--cyan);margin-bottom:4px}
+.emp-card .role{color:var(--mag);font-size:11px;text-transform:uppercase}
+.emp-card .stats-row{display:flex;gap:8px;margin-top:4px;color:var(--dim);font-size:11px}
+.emp-card .salary{color:var(--red);font-size:11px;margin-top:2px}
+.fire-btn{float:right;font-size:10px;padding:2px 8px;color:var(--red);border-color:var(--red)}
+
+/* Center Panel */
+.center-panel{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.tab-bar{display:flex;gap:4px;margin-bottom:8px}
+.tab-btn{padding:8px 16px;border-radius:6px 6px 0 0;font-size:12px;border-bottom:none}
+.tab-btn.active{background:var(--panel);border-color:var(--cyan);color:var(--cyan)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Products */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.product-card{background:#1a1a2e;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all .2s}
+.product-card:hover{border-color:var(--mag);transform:translateY(-2px)}
+.product-card.locked{opacity:.4;cursor:not-allowed}
+.product-card .pname{font-weight:700;margin-bottom:4px}
+.product-card .ptype{color:var(--mag);font-size:11px;text-transform:uppercase}
+.product-card .pdesc{color:var(--dim);font-size:11px;margin:6px 0}
+.product-card .pcost{color:var(--red);font-size:12px}
+.product-card .preview{color:var(--green);font-size:11px}
+.progress-bar{height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-bar .fill{height:100%;border-radius:3px;transition:width .3s;background:linear-gradient(90deg,var(--cyan),var(--mag))}
+
+/* Research */
+.research-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.research-node{background:#1a1a2e;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;transition:all .3s}
+.research-node:hover{border-color:var(--cyan)}
+.research-node.unlocked{border-color:var(--green);background:#00ff8808}
+.research-node.available{border-color:var(--cyan);cursor:pointer}
+.research-node.locked{opacity:.35}
+.research-node .ricon{font-size:28px;margin-bottom:6px}
+.research-node .rname{font-weight:700;font-size:13px;margin-bottom:4px}
+.research-node .rdesc{color:var(--dim);font-size:11px;margin-bottom:6px}
+.research-node .rcost{color:var(--yellow);font-size:12px}
+
+/* Hire */
+.hire-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.hire-card{background:#1a1a2e;border:1px solid var(--border);border-radius:8px;padding:12px;transition:all .2s}
+.hire-card:hover{border-color:var(--green)}
+.hire-card .hname{font-weight:700;color:var(--cyan)}
+.hire-card .hrole{color:var(--mag);font-size:11px;text-transform:uppercase;margin-bottom:6px}
+.hire-card .hstats{color:var(--dim);font-size:11px}
+.hire-card .hcost{color:var(--red);font-size:12px;margin-top:4px}
+.hire-card button{margin-top:8px;width:100%}
+
+/* Active Products */
+.active-product{background:#1a1a2e;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.active-product .ap-name{font-weight:700;color:var(--mag)}
+.active-product .ap-revenue{color:var(--green);font-size:13px}
+.active-product .ap-quality{color:var(--dim);font-size:12px}
+
+/* Right Panel */
+.right-panel{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+
+/* Event Log */
+.event-log{max-height:200px;overflow-y:auto;font-size:12px}
+.event-log .entry{padding:6px 8px;border-left:2px solid var(--border);margin-bottom:4px;color:var(--dim);animation:slideIn .3s}
+.event-log .entry.good{border-color:var(--green);color:var(--green)}
+.event-log .entry.bad{border-color:var(--red);color:var(--red)}
+.event-log .entry.info{border-color:var(--cyan);color:var(--cyan)}
+.event-log .entry.warn{border-color:var(--yellow);color:var(--yellow)}
+
+/* Competitors */
+.competitor{background:#1a1a2e;border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px;font-size:12px}
+.competitor .cname{font-weight:700;color:var(--orange)}
+.competitor .cval{color:var(--dim);font-size:11px}
+
+/* Bottom Panel */
+.bottom-panel{grid-column:1/-1;display:flex;gap:8px}
+.chart-container{flex:1}
+.chart-container canvas{width:100%;height:100%;border-radius:8px}
+
+/* Milestones */
+.milestone{display:inline-block;background:#1a1a2e;border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;margin:2px;color:var(--dim)}
+.milestone.achieved{border-color:var(--yellow);color:var(--yellow)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .2s}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h2{color:var(--cyan);margin-bottom:16px;font-size:18px}
+.modal p{color:var(--dim);font-size:13px;margin-bottom:12px;line-height:1.5}
+.modal .choices{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.modal .choices button{text-align:left;padding:12px;font-size:13px}
+
+/* End Screen */
+#end-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center}
+#end-screen.active{display:flex}
+#end-screen h1{font-size:3em;margin-bottom:10px}
+#end-screen .end-stats{color:var(--dim);margin:20px 0}
+
+/* Notification */
+.notification{position:fixed;top:60px;right:20px;background:var(--panel);border:1px solid var(--cyan);border-radius:8px;padding:12px 20px;z-index:200;animation:slideIn .3s;font-size:13px}
+.notification.bad{border-color:var(--red)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#333}
+
+/* Turn button */
+.next-turn-btn{padding:10px 24px;font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--mag));color:var(--bg);border:none;border-radius:8px;cursor:pointer;transition:all .2s}
+.next-turn-btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(0,229,255,.3)}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Tooltip */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000;color:var(--text);padding:4px 8px;border-radius:4px;font-size:11px;white-space:nowrap;z-index:50}
+</style>
+</head>
+<body>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen">
+  <h1>STARTUP EMPIRE</h1>
+  <p class="subtitle">Ze Zlína na vrchol světa 🚀</p>
+  <div style="margin:20px 0">
+    <p style="color:var(--dim);margin-bottom:12px">Difficulty</p>
+    <div class="difficulty-select">
+      <button class="diff-btn" data-diff="easy">Easy<br><small style="color:var(--dim)">1.5M CZK start</small></button>
+      <button class="diff-btn selected" data-diff="normal">Normal<br><small style="color:var(--dim)">1M CZK start</small></button>
+      <button class="diff-btn" data-diff="hard">Hard<br><small style="color:var(--dim)">500K CZK start</small></button>
+      <button class="diff-btn" data-diff="nightmare">Nightmare<br><small style="color:var(--dim)">250K CZK</small></button>
+    </div>
+  </div>
+  <button class="menu-btn primary" onclick="startNewGame()">🚀 New Game</button>
+  <button class="menu-btn" onclick="loadGame()" id="load-btn" style="display:none">📂 Load Game</button>
+  <p style="color:var(--dim);font-size:11px;margin-top:30px">Turn-based tycoon strategy • No dependencies • Made with spite and ambition</p>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div class="top-bar">
+    <div class="stats">
+      <div class="stat money"><span class="label">Cash:</span><span class="value" id="cash-display">1,000,000 CZK</span></div>
+      <div class="stat valuation"><span class="label">Valuation:</span><span class="value" id="val-display">1M CZK</span></div>
+      <div class="stat reputation"><span class="label">Rep:</span><span class="value" id="rep-display">50</span></div>
+      <div class="stat"><span class="label">Burn:</span><span class="value" id="burn-display" style="color:var(--red)">0/mo</span></div>
+      <div class="stat"><span class="label">Revenue:</span><span class="value" id="rev-display" style="color:var(--green)">0/mo</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="turn-info">Turn <span id="turn-display">1</span> • <span id="date-display">Q1 2026</span></div>
+      <button class="next-turn-btn" onclick="nextTurn()">Next Turn ▶</button>
+      <button onclick="saveGame()" style="font-size:11px">💾</button>
+      <button onclick="showSettings()" style="font-size:11px">⚙️</button>
+    </div>
+  </div>
+
+  <!-- LEFT: Team -->
+  <div class="left-panel">
+    <div class="panel" style="flex:1;overflow-y:auto">
+      <h3>👥 Team (<span id="team-count">0</span>)</h3>
+      <div id="team-list"></div>
+    </div>
+    <div class="panel">
+      <h3>🏆 Milestones</h3>
+      <div id="milestones"></div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="center-panel">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('products')">📦 Products</button>
+      <button class="tab-btn" onclick="switchTab('hire')">🧑‍💼 Hire</button>
+      <button class="tab-btn" onclick="switchTab('research')">🔬 Research</button>
+      <button class="tab-btn" onclick="switchTab('active')">📊 Portfolio</button>
+      <button class="tab-btn" onclick="switchTab('market')">🌍 Market</button>
+    </div>
+    <div class="panel" style="flex:1;overflow-y:auto">
+      <div id="tab-products" class="tab-content active"></div>
+      <div id="tab-hire" class="tab-content"></div>
+      <div id="tab-research" class="tab-content"></div>
+      <div id="tab-active" class="tab-content"></div>
+      <div id="tab-market" class="tab-content"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="panel">
+      <h3>🤖 Competitors</h3>
+      <div id="competitors"></div>
+    </div>
+    <div class="panel" style="flex:1;overflow-y:auto">
+      <h3>📜 Event Log</h3>
+      <div class="event-log" id="event-log"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: Charts -->
+  <div class="bottom-panel">
+    <div class="panel chart-container">
+      <h3>💰 Financials</h3>
+      <canvas id="finance-chart"></canvas>
+    </div>
+    <div class="panel chart-container">
+      <h3>📈 Valuation</h3>
+      <canvas id="val-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div id="end-screen">
+  <h1 id="end-title"></h1>
+  <p id="end-subtitle" style="color:var(--dim);font-size:1.2em"></p>
+  <div class="end-stats" id="end-stats"></div>
+  <button class="menu-btn primary" onclick="location.reload()">Play Again</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="event.target===this&&closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+// ===== AUDIO ENGINE =====
+const Audio = {
+  ctx: null,
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  },
+  play(type) {
+    if (!this.ctx) return;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.connect(g); g.connect(this.ctx.destination);
+    g.gain.value = 0.08;
+    const t = this.ctx.currentTime;
+    switch(type) {
+      case 'click': o.frequency.value=800; o.type='sine'; g.gain.exponentialRampToValueAtTime(.001,t+.1); o.start(t); o.stop(t+.1); break;
+      case 'success': o.frequency.value=523; o.type='sine'; g.gain.exponentialRampToValueAtTime(.001,t+.3); o.start(t); o.stop(t+.3);
+        const o2=this.ctx.createOscillator(),g2=this.ctx.createGain();o2.connect(g2);g2.connect(this.ctx.destination);g2.gain.value=.08;o2.frequency.value=659;o2.type='sine';g2.gain.exponentialRampToValueAtTime(.001,t+.4);o2.start(t+.15);o2.stop(t+.4); break;
+      case 'error': o.frequency.value=200; o.type='sawtooth'; g.gain.value=.05; g.gain.exponentialRampToValueAtTime(.001,t+.3); o.start(t); o.stop(t+.3); break;
+      case 'alert': o.frequency.value=440; o.type='triangle'; g.gain.exponentialRampToValueAtTime(.001,t+.5); o.start(t); o.stop(t+.5); break;
+      case 'coin': o.frequency.value=1200; o.type='sine'; g.gain.exponentialRampToValueAtTime(.001,t+.15); o.start(t); o.stop(t+.15); break;
+      case 'levelup': o.frequency.value=400; o.type='sine'; o.frequency.exponentialRampToValueAtTime(1200,t+.3); g.gain.exponentialRampToValueAtTime(.001,t+.4); o.start(t); o.stop(t+.4); break;
+    }
+  }
+};
+document.addEventListener('click', () => Audio.init(), {once:true});
+
+// ===== GAME DATA =====
+const CZECH_FIRST = ['Jakub','Tomáš','Petr','Martin','Jan','Pavel','Lukáš','Adam','Filip','Ondřej','Marek','David','Vojtěch','Michal','Matěj','Kateřina','Anna','Tereza','Lucie','Eva','Barbora','Veronika','Natálie','Eliška','Simona'];
+const CZECH_LAST = ['Novák','Dvořák','Svoboda','Novotný','Černý','Procházka','Kučera','Veselý','Horák','Němec','Pokorný','Marek','Pospíšil','Hájek','Jelínek','Kratochvíl','Šťastný','Fiala','Sedláček','Doležal'];
+
+const EMPLOYEE_TYPES = [
+  {role:'Developer',icon:'💻',salaryRange:[35000,80000],skills:['coding','debugging','architecture'],color:'var(--cyan)'},
+  {role:'Designer',icon:'🎨',salaryRange:[30000,60000],skills:['ui','ux','branding'],color:'var(--mag)'},
+  {role:'Salesperson',icon:'💼',salaryRange:[25000,55000],skills:['closing','networking','pitching'],color:'var(--green)'},
+  {role:'Marketer',icon:'📢',salaryRange:[28000,50000],skills:['seo','content','ads'],color:'var(--yellow)'},
+  {role:'Data Scientist',icon:'📊',salaryRange:[45000,90000],skills:['ml','analytics','statistics'],color:'var(--orange)'},
+  {role:'DevOps',icon:'⚙️',salaryRange:[40000,75000],skills:['cloud','ci_cd','security'],color:'#8888ff'},
+  {role:'PM',icon:'📋',salaryRange:[35000,65000],skills:['planning','communication','agile'],color:'#ff88ff'},
+];
+
+const PRODUCT_TYPES = [
+  {id:'saas_crm',name:'CRM SaaS',icon:'👥',category:'SaaS',baseCost:150000,devTime:3,baseRevenue:25000,riskMod:0.8,desc:'Customer relationship management. Safe bet.',requires:[]},
+  {id:'saas_erp',name:'ERP Platform',icon:'🏭',category:'SaaS',baseCost:400000,devTime:5,baseRevenue:60000,riskMod:0.7,desc:'Enterprise resource planning. Big market, big effort.',requires:['cloud_infra']},
+  {id:'mobile_app',name:'Mobile App',icon:'📱',category:'Mobile',baseCost:100000,devTime:2,baseRevenue:15000,riskMod:0.9,desc:'Consumer mobile app. Quick to ship.',requires:[]},
+  {id:'mobile_game',name:'Mobile Game',icon:'🎮',category:'Mobile',baseCost:200000,devTime:3,baseRevenue:40000,riskMod:1.3,desc:'High variance. Could go viral or flop.',requires:[]},
+  {id:'ai_chatbot',name:'AI Chatbot',icon:'🤖',category:'AI',baseCost:250000,devTime:3,baseRevenue:45000,riskMod:1.0,desc:'Everyone wants one. Differentiation is key.',requires:['ml_basics']},
+  {id:'ai_analytics',name:'AI Analytics',icon:'📈',category:'AI',baseCost:350000,devTime:4,baseRevenue:70000,riskMod:0.9,desc:'Data-driven insights platform.',requires:['ml_basics']},
+  {id:'ai_vision',name:'Computer Vision',icon:'👁️',category:'AI',baseCost:500000,devTime:5,baseRevenue:100000,riskMod:1.1,desc:'See the future. Literally.',requires:['deep_learning']},
+  {id:'blockchain_defi',name:'DeFi Platform',icon:'⛓️',category:'Blockchain',baseCost:300000,devTime:4,baseRevenue:80000,riskMod:1.5,desc:'High risk, high reward. Crypto bros love it.',requires:['blockchain']},
+  {id:'cyber_security',name:'Security Suite',icon:'🛡️',category:'Security',baseCost:280000,devTime:4,baseRevenue:55000,riskMod:0.6,desc:'Everyone needs it. Boring but profitable.',requires:['cloud_infra']},
+  {id:'ecommerce',name:'E-Commerce Engine',icon:'🛒',category:'SaaS',baseCost:200000,devTime:3,baseRevenue:35000,riskMod:0.8,desc:'Online shopping infrastructure.',requires:[]},
+  {id:'quantum_sim',name:'Quantum Simulator',icon:'⚛️',category:'Quantum',baseCost:800000,devTime:6,baseRevenue:150000,riskMod:1.4,desc:'Bleeding edge. Massive potential.',requires:['quantum']},
+  {id:'ar_platform',name:'AR Platform',icon:'🥽',category:'AR/VR',baseCost:450000,devTime:5,baseRevenue:85000,riskMod:1.2,desc:'Augmented reality dev platform.',requires:['deep_learning']},
+  {id:'api_gateway',name:'API Gateway',icon:'🔌',category:'Infrastructure',baseCost:180000,devTime:3,baseRevenue:30000,riskMod:0.5,desc:'Developer tools. Low margin, high retention.',requires:['cloud_infra']},
+  {id:'nocode',name:'No-Code Builder',icon:'🧩',category:'SaaS',baseCost:350000,devTime:4,baseRevenue:55000,riskMod:0.9,desc:'Let normies build apps. Meta.',requires:[]},
+];
+
+const RESEARCH_TREE = [
+  {id:'ml_basics',name:'ML Fundamentals',icon:'🧠',cost:100000,turns:2,desc:'Basic machine learning. Opens AI products.',requires:[],bonus:'Unlock AI products'},
+  {id:'cloud_infra',name:'Cloud Infrastructure',icon:'☁️',cost:80000,turns:2,desc:'Scalable cloud setup.',requires:[],bonus:'-15% hosting costs'},
+  {id:'deep_learning',name:'Deep Learning',icon:'🔮',cost:250000,turns:3,desc:'Neural networks, transformers.',requires:['ml_basics'],bonus:'Unlock Vision & AR'},
+  {id:'blockchain',name:'Blockchain',icon:'⛓️',cost:150000,turns:2,desc:'Distributed ledger tech.',requires:[],bonus:'Unlock DeFi products'},
+  {id:'quantum',name:'Quantum Computing',icon:'⚛️',cost:500000,turns:5,desc:'Quantum algorithms and simulation.',requires:['deep_learning'],bonus:'Unlock Quantum products'},
+  {id:'agile',name:'Agile Mastery',icon:'🔄',cost:60000,turns:1,desc:'Ship faster, fail smarter.',requires:[],bonus:'-20% dev time'},
+  {id:'growth_hacking',name:'Growth Hacking',icon:'📈',cost:120000,turns:2,desc:'Viral loops and retention.',requires:[],bonus:'+30% marketing effect'},
+  {id:'data_pipeline',name:'Data Pipeline',icon:'🔧',cost:100000,turns:2,desc:'ETL and real-time processing.',requires:['cloud_infra'],bonus:'+20% product quality'},
+  {id:'llm_fine_tuning',name:'LLM Fine-tuning',icon:'💬',cost:300000,turns:3,desc:'Custom language models.',requires:['deep_learning'],bonus:'+50% AI product revenue'},
+  {id:'edge_computing',name:'Edge Computing',icon:'📡',cost:200000,turns:3,desc:'Compute at the edge.',requires:['cloud_infra'],bonus:'-25% infrastructure costs'},
+  {id:'cybersec_advanced',name:'Advanced Security',icon:'🔐',cost:180000,turns:2,desc:'Zero-trust architecture.',requires:['cloud_infra'],bonus:'+20 reputation'},
+];
+
+const EVENTS = [
+  {id:'market_crash',name:'Tržní krach!',desc:'Markets are crashing. Valuations drop 20%.',type:'bad',effect:g=>{g.valuation*=.8;return'Valuation -20%'}},
+  {id:'viral',name:'Virální moment!',desc:'Your product went viral on social media!',type:'good',effect:g=>{if(g.activeProducts.length){g.activeProducts[0].revenue*=1.5;return'Top product revenue +50%'}return'No product to boost'},cond:g=>g.activeProducts.length>0},
+  {id:'investor',name:'Investor zájem',desc:'A VC firm wants to talk. Accept meeting?',type:'choice',choices:[
+    {text:'Accept meeting (+500K CZK, -5 reputation)',effect:g=>{g.cash+=500000;g.reputation-=5;return'+500K CZK, reputation -5'}},
+    {text:'Decline politely (+10 reputation)',effect:g=>{g.reputation+=10;return'Reputation +10'}},
+  ]},
+  {id:'talent_poach',name:'Talent poaching!',desc:'Konkurence se snaží přetáhnout tvého nejlepšího zaměstnance.',type:'choice',choices:[
+    {text:'Give them a 30% raise',effect:g=>{if(g.employees.length){g.employees[0].salary*=1.3;return'Salary increased'}return'No one to poach'}},
+    {text:'Let them go',effect:g=>{if(g.employees.length){const e=g.employees.shift();return`${e.name} left`}return'No employees'}},
+  ],cond:g=>g.employees.length>0},
+  {id:'tax_audit',name:'Daňová kontrola',desc:'Finanční úřad se zajímá o tvé podnikání.',type:'bad',effect:g=>{const fine=Math.floor(g.cash*.05);g.cash-=fine;return`Fined ${fmt(fine)} CZK`}},
+  {id:'hackathon',name:'Hackathon win!',desc:'Your team won a hackathon!',type:'good',effect:g=>{g.reputation+=15;return'Reputation +15'}},
+  {id:'server_down',name:'Servery spadly!',desc:'Major outage. Customers are angry.',type:'bad',effect:g=>{g.reputation-=10;return'Reputation -10'}},
+  {id:'press_coverage',name:'Článek v médiích',desc:'Forbes Czech wrote about you!',type:'good',effect:g=>{g.reputation+=20;g.valuation*=1.1;return'Rep +20, Valuation +10%'}},
+  {id:'recession',name:'Recese',desc:'Economic slowdown hits revenue.',type:'bad',effect:g=>{g.activeProducts.forEach(p=>p.revenue*=.8);return'All revenue -20%'}},
+  {id:'crypto_boom',name:'Crypto boom!',desc:'Crypto market is surging.',type:'good',effect:g=>{const bp=g.activeProducts.find(p=>p.type.category==='Blockchain');if(bp){bp.revenue*=2;return'Blockchain revenue x2'}return'No blockchain products to benefit'},cond:g=>g.activeProducts.some(p=>p.type.category==='Blockchain')},
+  {id:'intern',name:'Stážista z Brna',desc:'A brilliant intern from MUNI wants to join for free for 3 turns.',type:'good',effect:g=>{g.employees.push({name:'Stážista '+CZECH_LAST[Math.floor(Math.random()*CZECH_LAST.length)],role:'Developer',salary:0,skill:60+Math.floor(Math.random()*20),icon:'💻',temporary:3});return'Free intern for 3 turns!'}},
+  {id:'competitor_fail',name:'Konkurent padl!',desc:'One of your competitors made a critical mistake.',type:'good',effect:g=>{const c=g.competitors.find(c=>c.alive);if(c){c.valuation*=.7;return`${c.name} valuation -30%`}return'No competitors left'}},
+  {id:'feature_request',name:'Velký klient chce feature',desc:'A major client wants a custom feature. Big money but it\'ll distract your team.',type:'choice',choices:[
+    {text:'Accept contract (+300K CZK, -1 turn dev time)',effect:g=>{g.cash+=300000;return'+300K CZK'}},
+    {text:'Decline, focus on product (+5 reputation)',effect:g=>{g.reputation+=5;return'Reputation +5'}},
+  ]},
+  {id:'office_fire',name:'Požár v kanclu!',desc:'Electrical fire. Need to replace equipment.',type:'bad',effect:g=>{g.cash-=100000;return'-100K CZK repairs'}},
+  {id:'eu_grant',name:'EU grant!',desc:'You qualified for an EU innovation grant.',type:'good',effect:g=>{g.cash+=400000;return'+400K CZK from EU'}},
+  {id:'employee_conflict',name:'Konflikt v týmu',desc:'Two employees are clashing. Morale is dropping.',type:'bad',effect:g=>{g.reputation-=5;return'Reputation -5'}},
+  {id:'podcast',name:'Podcast pozvánka',desc:'You got invited to a popular Czech tech podcast.',type:'choice',choices:[
+    {text:'Go on the podcast (+15 reputation)',effect:g=>{g.reputation+=15;return'Rep +15'}},
+    {text:'Too busy, skip it',effect:g=>{return'Opportunity missed'}},
+  ]},
+  {id:'copycat',name:'Někdo tě kopíruje!',desc:'A competitor launched a knockoff of your product.',type:'bad',effect:g=>{if(g.activeProducts.length){g.activeProducts[g.activeProducts.length-1].revenue*=.7;return'Latest product revenue -30%'}return'No products affected'}},
+  {id:'angel',name:'Andělský investor',desc:'An angel investor from Prague is interested.',type:'choice',choices:[
+    {text:'Accept 800K for 10% equity',effect:g=>{g.cash+=800000;g.equityGiven+=10;return'+800K, gave 10% equity'}},
+    {text:'No thanks, we\'re bootstrapping',effect:g=>{g.reputation+=5;return'Rep +5, stayed independent'}},
+  ]},
+  {id:'burnout',name:'Burnout!',desc:'You pushed too hard. Need a break.',type:'bad',effect:g=>{g.employees.forEach(e=>e.skill=Math.max(20,e.skill-10));return'All employee skills -10'}},
+  {id:'conference',name:'WebExpo Praha',desc:'Attend the conference?',type:'choice',choices:[
+    {text:'Attend (-50K CZK, +10 rep, hire opportunity)',effect:g=>{g.cash-=50000;g.reputation+=10;return'-50K, +10 rep'}},
+    {text:'Skip, save the money',effect:g=>({})},
+  ]},
+  {id:'bug_critical',name:'Kritický bug!',desc:'A critical security vulnerability was found in production.',type:'bad',effect:g=>{g.reputation-=15;return'Rep -15, trust damaged'}},
+  {id:'acquisition_offer',name:'Nabídka na akvizici',desc:'A big corp wants to buy you out.',type:'choice',choices:[
+    {text:'Sell for current valuation (GAME END)',effect:g=>{g.ending='acquisition';return'Sold!'}},
+    {text:'Not for sale.',effect:g=>{g.reputation+=10;g.valuation*=1.15;return'Rep +10, Val +15%'}},
+  ]},
+  {id:'tech_debt',name:'Technický dluh',desc:'Shortcuts are catching up. Code quality suffering.',type:'bad',effect:g=>{g.activeProducts.forEach(p=>p.quality=Math.max(10,p.quality-10));return'All product quality -10'}},
+  {id:'partnership',name:'Partnerství s korporátem',desc:'A large Czech corp wants to partner.',type:'good',effect:g=>{g.cash+=200000;g.reputation+=10;return'+200K, +10 rep'}},
+  {id:'currency_drop',name:'Koruna padá',desc:'CZK weakened. Good for exports!',type:'good',effect:g=>{g.activeProducts.forEach(p=>p.revenue*=1.1);return'All revenue +10%'}},
+  {id:'talent_surge',name:'Vlna talentů',desc:'Several great candidates appeared on the market.',type:'good',effect:g=>{g.hireBonusNextTurn=true;return'Better hires available next turn'}},
+  {id:'regulation',name:'Nová regulace EU',desc:'New EU regulation increases compliance costs.',type:'bad',effect:g=>{g.cash-=150000;return'-150K CZK compliance costs'}},
+  {id:'mentor',name:'Mentor se ozval',desc:'A successful Czech founder offers mentorship.',type:'good',effect:g=>{g.reputation+=10;g.employees.forEach(e=>e.skill=Math.min(100,e.skill+5));return'+10 rep, all skills +5'}},
+  {id:'ddos',name:'DDoS útok!',desc:'Your services are under attack.',type:'bad',effect:g=>{g.cash-=50000;g.reputation-=5;return'-50K, -5 rep'}},
+  {id:'referral',name:'Doporučení od klienta',desc:'Happy customer is sending referrals your way.',type:'good',effect:g=>{if(g.activeProducts.length){g.activeProducts[0].revenue*=1.2;return'Top product revenue +20%'}return'No products'}},
+  {id:'award',name:'Czech Startup Award!',desc:'You won Czech Startup of the Year!',type:'good',effect:g=>{g.reputation+=25;g.valuation*=1.2;return'+25 rep, valuation +20%'},cond:g=>g.reputation>=70},
+  {id:'pivot_pressure',name:'Investoři tlačí na pivot',desc:'Investors want you to change direction.',type:'choice',choices:[
+    {text:'Pivot (remove oldest product, +500K)',effect:g=>{if(g.activeProducts.length){g.activeProducts.shift();g.cash+=500000;return'Pivoted, +500K'}return'+500K anyway';g.cash+=500000}},
+    {text:'Stay the course (+10 rep)',effect:g=>{g.reputation+=10;return'Stayed focused'}},
+  ]},
+];
+
+const MILESTONES = [
+  {id:'first_hire',name:'First Hire',desc:'Hire your first employee',icon:'👤',check:g=>g.employees.length>=1,bonus:g=>{g.reputation+=5}},
+  {id:'team_5',name:'Team of 5',desc:'Build a team of 5',icon:'👥',check:g=>g.employees.length>=5,bonus:g=>{g.reputation+=10}},
+  {id:'first_product',name:'First Product',desc:'Launch your first product',icon:'📦',check:g=>g.activeProducts.length>=1,bonus:g=>{g.cash+=50000}},
+  {id:'million_rev',name:'Millionaire Revenue',desc:'Reach 1M CZK monthly revenue',icon:'💰',check:g=>g.totalRevenue>=1000000,bonus:g=>{g.valuation*=1.2}},
+  {id:'val_10m',name:'10M Valuation',desc:'Company valued at 10M+',icon:'📈',check:g=>g.valuation>=10000000,bonus:g=>{g.reputation+=15}},
+  {id:'val_100m',name:'100M Club',desc:'Reach 100M valuation',icon:'🦄',check:g=>g.valuation>=100000000,bonus:g=>{g.reputation+=30}},
+  {id:'research_3',name:'R&D Pioneer',desc:'Complete 3 research projects',icon:'🔬',check:g=>g.unlockedResearch.length>=3,bonus:g=>{g.cash+=200000}},
+  {id:'products_5',name:'Portfolio Builder',desc:'Have 5 active products',icon:'🏗️',check:g=>g.activeProducts.length>=5,bonus:g=>{g.valuation*=1.15}},
+  {id:'rep_90',name:'Industry Leader',desc:'Reach 90+ reputation',icon:'⭐',check:g=>g.reputation>=90,bonus:g=>{g.valuation*=1.3}},
+  {id:'survivor',name:'Survivor',desc:'Reach turn 20',icon:'🏅',check:g=>g.turn>=20,bonus:g=>{g.cash+=300000}},
+  {id:'global',name:'Going Global',desc:'Expand to international markets',icon:'🌍',check:g=>g.marketExpansion>=1,bonus:g=>{g.valuation*=1.25}},
+];
+
+const COMPETITOR_NAMES = [
+  {name:'TechForge Praha',style:'aggressive',icon:'🔴'},
+  {name:'NovaSoft Brno',style:'balanced',icon:'🔵'},
+  {name:'DigiWave Ostrava',style:'conservative',icon:'🟢'},
+];
+
+// ===== GAME STATE =====
+let G = {};
+
+function defaultState(difficulty) {
+  const cashMap = {easy:1500000,normal:1000000,hard:500000,nightmare:250000};
+  return {
+    difficulty, turn:1, cash:cashMap[difficulty]||1000000, valuation:cashMap[difficulty]||1000000,
+    reputation:50, employees:[], activeProducts:[], developingProducts:[],
+    unlockedResearch:[], researchInProgress:null,
+    competitors: COMPETITOR_NAMES.map(c=>({...c,valuation:800000+Math.random()*400000,products:1,alive:true})),
+    achievedMilestones:[], equityGiven:0, totalRevenue:0, marketExpansion:0,
+    history:{cash:[],valuation:[],revenue:[]},
+    eventLog:[], hireBonusNextTurn:false, ending:null,
+    availableHires:[], settings:{soundOn:true}
+  };
+}
+
+// ===== UTILITY =====
+function fmt(n) {
+  if (Math.abs(n)>=1e9) return (n/1e9).toFixed(1)+'B';
+  if (Math.abs(n)>=1e6) return (n/1e6).toFixed(1)+'M';
+  if (Math.abs(n)>=1e3) return (n/1e3).toFixed(0)+'K';
+  return Math.floor(n).toLocaleString('cs-CZ');
+}
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+
+function playSound(type) {
+  if (G.settings && G.settings.soundOn) Audio.play(type);
+}
+
+// ===== RENDERING =====
+function render() {
+  // Top bar
+  document.getElementById('cash-display').textContent = fmt(G.cash)+' CZK';
+  document.getElementById('val-display').textContent = fmt(G.valuation)+' CZK';
+  document.getElementById('rep-display').textContent = Math.floor(G.reputation);
+  document.getElementById('turn-display').textContent = G.turn;
+  const q = Math.ceil(G.turn/3); const y = 2026+Math.floor((G.turn-1)/12);
+  document.getElementById('date-display').textContent = `Q${((q-1)%4)+1} ${y}`;
+
+  const burn = G.employees.reduce((s,e)=>s+e.salary,0);
+  const rev = G.activeProducts.reduce((s,p)=>s+p.revenue,0);
+  document.getElementById('burn-display').textContent = fmt(burn)+'/mo';
+  document.getElementById('rev-display').textContent = fmt(rev)+'/mo';
+
+  renderTeam();
+  renderProducts();
+  renderHire();
+  renderResearch();
+  renderActive();
+  renderMarket();
+  renderCompetitors();
+  renderMilestones();
+  renderEventLog();
+  renderCharts();
+}
+
+function renderTeam() {
+  const el = document.getElementById('team-list');
+  document.getElementById('team-count').textContent = G.employees.length;
+  el.innerHTML = G.employees.map((e,i) => `
+    <div class="emp-card">
+      <button class="fire-btn" onclick="fireEmployee(${i})">✕</button>
+      <div class="name">${e.icon} ${e.name}</div>
+      <div class="role" style="color:${e.color||'var(--mag)'}">${e.role}${e.temporary?` (${e.temporary}t left)`:''}</div>
+      <div class="stats-row">Skill: ${e.skill} | Morale: ${e.morale||80}</div>
+      <div class="salary">${fmt(e.salary)} CZK/mo</div>
+    </div>
+  `).join('');
+}
+
+function renderProducts() {
+  const el = document.getElementById('tab-products');
+  el.innerHTML = '<div class="product-grid">'+PRODUCT_TYPES.map(p => {
+    const locked = p.requires.length > 0 && !p.requires.every(r => G.unlockedResearch.includes(r));
+    const canAfford = G.cash >= p.baseCost;
+    const developing = G.developingProducts.some(d=>d.type.id===p.id);
+    const active = G.activeProducts.some(a=>a.type.id===p.id);
+    return `<div class="product-card ${locked?'locked':''}" onclick="${locked||!canAfford||developing||active?'':'startProduct(\''+p.id+'\')'}">
+      <div class="pname">${p.icon} ${p.name}</div>
+      <div class="ptype">${p.category}</div>
+      <div class="pdesc">${p.desc}</div>
+      <div class="pcost">${fmt(p.baseCost)} CZK • ${p.devTime} turns</div>
+      <div class="preview">~${fmt(p.baseRevenue)}/mo revenue</div>
+      ${locked?'<div style="color:var(--red);font-size:11px;margin-top:4px">Requires: '+p.requires.join(', ')+'</div>':''}
+      ${developing?'<div style="color:var(--yellow);font-size:11px;margin-top:4px">🔨 In development</div>':''}
+      ${active?'<div style="color:var(--green);font-size:11px;margin-top:4px">✅ Active</div>':''}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function renderHire() {
+  const el = document.getElementById('tab-hire');
+  if (!G.availableHires.length) generateHires();
+  el.innerHTML = '<p style="color:var(--dim);font-size:12px;margin-bottom:10px">Available candidates (refreshes each turn)</p><div class="hire-grid">'+
+    G.availableHires.map((h,i) => `
+    <div class="hire-card">
+      <div class="hname">${h.icon} ${h.name}</div>
+      <div class="hrole" style="color:${h.color}">${h.role}</div>
+      <div class="hstats">Skill: ${h.skill} | Asks: ${fmt(h.salary)} CZK/mo</div>
+      <button onclick="hireEmployee(${i})" ${G.cash<h.salary*3?'disabled':''}>Hire (${fmt(h.salary*3)} signing)</button>
+    </div>
+  `).join('')+'</div>';
+}
+
+function renderResearch() {
+  const el = document.getElementById('tab-research');
+  el.innerHTML = '<div class="research-grid">'+RESEARCH_TREE.map(r => {
+    const unlocked = G.unlockedResearch.includes(r.id);
+    const inProgress = G.researchInProgress && G.researchInProgress.id === r.id;
+    const available = !unlocked && !inProgress && r.requires.every(req=>G.unlockedResearch.includes(req));
+    return `<div class="research-node ${unlocked?'unlocked':available?'available':'locked'}" ${available?`onclick="startResearch('${r.id}')"`:''}> 
+      <div class="ricon">${r.icon}</div>
+      <div class="rname">${r.name}</div>
+      <div class="rdesc">${r.desc}</div>
+      ${unlocked?'<div style="color:var(--green);font-size:11px">✅ Unlocked</div>':
+        inProgress?`<div style="color:var(--yellow);font-size:11px">🔬 ${G.researchInProgress.turnsLeft} turns left</div>`:
+        `<div class="rcost">${fmt(r.cost)} CZK • ${r.turns} turns</div>`}
+      <div style="color:var(--dim);font-size:10px;margin-top:4px">${r.bonus}</div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function renderActive() {
+  const el = document.getElementById('tab-active');
+  if (!G.activeProducts.length && !G.developingProducts.length) {
+    el.innerHTML = '<p style="color:var(--dim)">No products yet. Start building!</p>';
+    return;
+  }
+  let html = '';
+  G.developingProducts.forEach((p,i) => {
+    const pct = Math.floor(((p.totalTurns-p.turnsLeft)/p.totalTurns)*100);
+    html += `<div class="active-product"><div class="ap-name">${p.type.icon} ${p.type.name} <span style="color:var(--yellow)">[Building: ${p.turnsLeft} turns left]</span></div>
+    <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  });
+  G.activeProducts.forEach((p,i) => {
+    html += `<div class="active-product">
+      <div class="ap-name">${p.type.icon} ${p.type.name}</div>
+      <div class="ap-revenue">Revenue: ${fmt(p.revenue)} CZK/mo</div>
+      <div class="ap-quality">Quality: ${Math.floor(p.quality)}/100 | Users: ${fmt(p.users)}</div>
+      <button onclick="upgradeProduct(${i})" style="margin-top:6px;font-size:11px" ${G.cash<50000?'disabled':''}>Upgrade (-50K, +quality)</button>
+      <button onclick="shutdownProduct(${i})" class="danger" style="margin-top:6px;font-size:11px;margin-left:4px">Shutdown</button>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderMarket() {
+  const el = document.getElementById('tab-market');
+  const markets = [
+    {name:'Czech Republic',icon:'🇨🇿',cost:0,level:1,desc:'Home market. You\'re already here.'},
+    {name:'Slovakia',icon:'🇸🇰',cost:200000,level:0,desc:'Bratia Slováci. Easy expansion.',req:30},
+    {name:'DACH Region',icon:'🇩🇪',cost:500000,level:0,desc:'Germany, Austria, Switzerland. Big money.',req:50},
+    {name:'EU Market',icon:'🇪🇺',cost:1000000,level:0,desc:'Full European presence.',req:65},
+    {name:'US Market',icon:'🇺🇸',cost:2000000,level:0,desc:'The big leagues.',req:80},
+    {name:'Global',icon:'🌍',cost:5000000,level:0,desc:'World domination.',req:90},
+  ];
+  el.innerHTML = '<p style="color:var(--dim);font-size:12px;margin-bottom:10px">Expand to new markets to multiply revenue</p>'+
+    markets.map((m,i) => {
+      const expanded = G.marketExpansion >= i;
+      const canExpand = !expanded && G.marketExpansion >= i-1 && G.cash >= m.cost && G.reputation >= (m.req||0);
+      return `<div class="active-product">
+        <div class="ap-name">${m.icon} ${m.name} ${expanded?'<span style="color:var(--green)">✅ Active</span>':''}</div>
+        <div style="color:var(--dim);font-size:12px">${m.desc}</div>
+        ${!expanded?`<div style="font-size:12px;margin-top:4px">Cost: ${fmt(m.cost)} CZK | Requires: ${m.req||0} rep</div>
+        <button onclick="expandMarket(${i})" style="margin-top:6px" ${canExpand?'':'disabled'}>Expand</button>`:''}
+      </div>`;
+    }).join('');
+}
+
+function renderCompetitors() {
+  const el = document.getElementById('competitors');
+  el.innerHTML = G.competitors.map(c => 
+    `<div class="competitor" style="${!c.alive?'opacity:.3':''}">
+      <div class="cname">${c.icon} ${c.name}</div>
+      <div class="cval">Val: ${fmt(c.valuation)} | Products: ${c.products} ${!c.alive?'💀':''}
+      </div>
+    </div>`
+  ).join('');
+}
+
+function renderMilestones() {
+  const el = document.getElementById('milestones');
+  el.innerHTML = MILESTONES.map(m => 
+    `<span class="milestone ${G.achievedMilestones.includes(m.id)?'achieved':''}" data-tip="${m.desc}">${m.icon} ${m.name}</span>`
+  ).join('');
+}
+
+function renderEventLog() {
+  const el = document.getElementById('event-log');
+  el.innerHTML = G.eventLog.slice(-20).reverse().map(e => 
+    `<div class="entry ${e.type}">[T${e.turn}] ${e.text}</div>`
+  ).join('');
+}
+
+function renderCharts() {
+  // Finance chart
+  const fc = document.getElementById('finance-chart');
+  const fctx = fc.getContext('2d');
+  const w = fc.parentElement.clientWidth - 32;
+  const h = fc.parentElement.clientHeight - 40;
+  fc.width = w; fc.height = h;
+  fctx.clearRect(0,0,w,h);
+  
+  if (G.history.cash.length > 1) {
+    drawLine(fctx, G.history.cash, w, h, '#00ff88', 'Cash');
+    drawLine(fctx, G.history.revenue, w, h, '#00e5ff', 'Revenue');
+  }
+
+  // Valuation chart
+  const vc = document.getElementById('val-chart');
+  const vctx = vc.getContext('2d');
+  vc.width = w; vc.height = h;
+  vctx.clearRect(0,0,w,h);
+  if (G.history.valuation.length > 1) {
+    drawLine(vctx, G.history.valuation, w, h, '#ff00e5', 'Valuation');
+  }
+}
+
+function drawLine(ctx, data, w, h, color, label) {
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const step = w / Math.max(data.length - 1, 1);
+  
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 20) - 10;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  
+  // Label
+  ctx.fillStyle = color;
+  ctx.font = '11px sans-serif';
+  ctx.fillText(label + ': ' + fmt(data[data.length-1]), 5, 15);
+  
+  // Glow
+  ctx.strokeStyle = color + '33';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 20) - 10;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+// ===== TABS =====
+function switchTab(tab) {
+  playSound('click');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ===== GAME ACTIONS =====
+function generateHires() {
+  const count = G.hireBonusNextTurn ? 6 : 4;
+  const skillBonus = G.hireBonusNextTurn ? 15 : 0;
+  G.hireBonusNextTurn = false;
+  G.availableHires = [];
+  for (let i=0; i<count; i++) {
+    const type = pick(EMPLOYEE_TYPES);
+    const repBonus = Math.floor(G.reputation / 10);
+    const skill = clamp(rnd(30, 70) + repBonus + skillBonus, 20, 99);
+    const salary = Math.floor(type.salaryRange[0] + (skill/100) * (type.salaryRange[1]-type.salaryRange[0]));
+    G.availableHires.push({
+      name: pick(CZECH_FIRST) + ' ' + pick(CZECH_LAST),
+      role: type.role, icon: type.icon, color: type.color,
+      skill, salary, morale: 80
+    });
+  }
+}
+
+function hireEmployee(idx) {
+  const h = G.availableHires[idx];
+  if (!h || G.cash < h.salary * 3) return;
+  playSound('success');
+  G.cash -= h.salary * 3;
+  G.employees.push({...h});
+  G.availableHires.splice(idx, 1);
+  addLog('Hired ' + h.name + ' as ' + h.role, 'good');
+  render();
+}
+
+function fireEmployee(idx) {
+  const e = G.employees[idx];
+  if (!e) return;
+  playSound('click');
+  G.employees.splice(idx, 1);
+  G.reputation -= 3;
+  addLog('Fired ' + e.name, 'bad');
+  render();
+}
+
+function startProduct(id) {
+  const type = PRODUCT_TYPES.find(p=>p.id===id);
+  if (!type || G.cash < type.baseCost) return;
+  
+  const locked = type.requires.length > 0 && !type.requires.every(r => G.unlockedResearch.includes(r));
+  if (locked) return;
+  
+  playSound('coin');
+  G.cash -= type.baseCost;
+  let devTime = type.devTime;
+  if (G.unlockedResearch.includes('agile')) devTime = Math.max(1, Math.ceil(devTime * 0.8));
+  
+  G.developingProducts.push({type, turnsLeft: devTime, totalTurns: devTime});
+  addLog('Started developing ' + type.name, 'info');
+  render();
+}
+
+function startResearch(id) {
+  const r = RESEARCH_TREE.find(n=>n.id===id);
+  if (!r || G.cash < r.cost || G.researchInProgress) return;
+  if (!r.requires.every(req=>G.unlockedResearch.includes(req))) return;
+  
+  playSound('click');
+  G.cash -= r.cost;
+  G.researchInProgress = {id: r.id, turnsLeft: r.turns};
+  addLog('Started researching ' + r.name, 'info');
+  render();
+}
+
+function upgradeProduct(idx) {
+  const p = G.activeProducts[idx];
+  if (!p || G.cash < 50000) return;
+  playSound('coin');
+  G.cash -= 50000;
+  p.quality = Math.min(100, p.quality + rnd(5, 15));
+  p.revenue *= 1.1;
+  addLog('Upgraded ' + p.type.name, 'good');
+  render();
+}
+
+function shutdownProduct(idx) {
+  const p = G.activeProducts[idx];
+  if (!p) return;
+  playSound('click');
+  G.activeProducts.splice(idx, 1);
+  addLog('Shut down ' + p.type.name, 'warn');
+  render();
+}
+
+function expandMarket(idx) {
+  const costs = [0, 200000, 500000, 1000000, 2000000, 5000000];
+  const reqs = [0, 30, 50, 65, 80, 90];
+  if (G.marketExpansion >= idx || G.marketExpansion < idx-1) return;
+  if (G.cash < costs[idx] || G.reputation < reqs[idx]) return;
+  
+  playSound('levelup');
+  G.cash -= costs[idx];
+  G.marketExpansion = idx;
+  const multiplier = 1 + idx * 0.3;
+  G.activeProducts.forEach(p => p.revenue *= 1.3);
+  addLog('Expanded to new market! Revenue x1.3', 'good');
+  render();
+}
+
+// ===== TURN LOGIC =====
+function nextTurn() {
+  playSound('click');
+  
+  // 1. Pay salaries
+  const burn = G.employees.reduce((s,e)=>s+e.salary, 0);
+  G.cash -= burn;
+  
+  // 2. Collect revenue
+  const rev = G.activeProducts.reduce((s,p)=>s+p.revenue, 0);
+  G.cash += rev;
+  G.totalRevenue += rev;
+  
+  // 3. Progress developing products
+  G.developingProducts.forEach(p => p.turnsLeft--);
+  const finished = G.developingProducts.filter(p => p.turnsLeft <= 0);
+  G.developingProducts = G.developingProducts.filter(p => p.turnsLeft > 0);
+  
+  finished.forEach(p => {
+    const devSkill = G.employees.filter(e=>e.role==='Developer').reduce((s,e)=>s+e.skill,0);
+    const designSkill = G.employees.filter(e=>e.role==='Designer').reduce((s,e)=>s+e.skill,0);
+    let quality = clamp(40 + devSkill/5 + designSkill/8 + rnd(-10,10), 20, 100);
+    if (G.unlockedResearch.includes('data_pipeline')) quality = Math.min(100, quality * 1.2);
+    
+    let revenue = p.type.baseRevenue * (quality/60) * (0.5 + Math.random() * p.type.riskMod);
+    const marketingSkill = G.employees.filter(e=>e.role==='Marketer').reduce((s,e)=>s+e.skill,0);
+    if (G.unlockedResearch.includes('growth_hacking')) revenue *= 1.3;
+    revenue *= (1 + marketingSkill/200);
+    if (G.unlockedResearch.includes('llm_fine_tuning') && p.type.category==='AI') revenue *= 1.5;
+    
+    const salesSkill = G.employees.filter(e=>e.role==='Salesperson').reduce((s,e)=>s+e.skill,0);
+    revenue *= (1 + salesSkill/300);
+    
+    // Market multiplier
+    revenue *= (1 + G.marketExpansion * 0.25);
+    
+    G.activeProducts.push({
+      type: p.type, quality, revenue: Math.floor(revenue),
+      users: Math.floor(revenue / 2 * (1 + Math.random()))
+    });
+    playSound('levelup');
+    addLog('🚀 Launched ' + p.type.name + '! Revenue: ' + fmt(revenue) + '/mo', 'good');
+  });
+  
+  // 4. Research progress
+  if (G.researchInProgress) {
+    G.researchInProgress.turnsLeft--;
+    if (G.researchInProgress.turnsLeft <= 0) {
+      const r = RESEARCH_TREE.find(n=>n.id===G.researchInProgress.id);
+      G.unlockedResearch.push(G.researchInProgress.id);
+      G.researchInProgress = null;
+      playSound('levelup');
+      addLog('🔬 Unlocked: ' + r.name + '!', 'good');
+      // Apply bonuses
+      if (r.id === 'cybersec_advanced') G.reputation += 20;
+    }
+  }
+  
+  // 5. Product decay & growth
+  G.activeProducts.forEach(p => {
+    p.quality = Math.max(10, p.quality - rnd(1,3));
+    p.revenue *= (0.97 + p.quality/1000);
+    p.users = Math.floor(p.users * (0.95 + p.quality/500 + Math.random()*0.1));
+    if (p.quality < 20) p.revenue *= 0.8;
+  });
+  
+  // 6. Temp employees
+  G.employees = G.employees.filter(e => {
+    if (e.temporary) {
+      e.temporary--;
+      if (e.temporary <= 0) { addLog(e.name+' (intern) left', 'info'); return false; }
+    }
+    return true;
+  });
+  
+  // 7. Competitor AI
+  G.competitors.forEach(c => {
+    if (!c.alive) return;
+    c.valuation *= (0.95 + Math.random() * 0.15);
+    if (Math.random() < 0.3) c.products += 1;
+    if (c.style === 'aggressive') c.valuation *= 1.05;
+    if (c.valuation < 100000) { c.alive = false; addLog('💀 ' + c.name + ' went bankrupt!', 'warn'); }
+  });
+  
+  // 8. Random event (70% chance)
+  if (Math.random() < 0.7) {
+    const eligible = EVENTS.filter(e => !e.cond || e.cond(G));
+    if (eligible.length) {
+      const ev = pick(eligible);
+      if (ev.type === 'choice') {
+        showEventModal(ev);
+      } else {
+        const result = ev.effect(G);
+        addLog(`${ev.type==='good'?'✅':'❌'} ${ev.name}: ${result}`, ev.type==='good'?'good':'bad');
+        if (ev.type === 'good') playSound('success');
+        else playSound('error');
+      }
+    }
+  }
+  
+  // 9. Update valuation
+  const revMultiplier = G.activeProducts.reduce((s,p)=>s+p.revenue,0) * 12 * 5;
+  const teamValue = G.employees.length * 200000;
+  const repMultiplier = 1 + G.reputation / 100;
+  const researchValue = G.unlockedResearch.length * 500000;
+  G.valuation = Math.max(G.valuation * 0.9, (G.cash + revMultiplier + teamValue + researchValue) * repMultiplier);
+  
+  // 10. Check milestones
+  MILESTONES.forEach(m => {
+    if (!G.achievedMilestones.includes(m.id) && m.check(G)) {
+      G.achievedMilestones.push(m.id);
+      m.bonus(G);
+      playSound('levelup');
+      addLog('🏆 Milestone: ' + m.name + '!', 'good');
+      notify('🏆 ' + m.name + ' achieved!');
+    }
+  });
+  
+  // 11. History
+  G.history.cash.push(G.cash);
+  G.history.valuation.push(G.valuation);
+  G.history.revenue.push(G.activeProducts.reduce((s,p)=>s+p.revenue,0));
+  
+  // 12. Generate new hires
+  generateHires();
+  
+  // 13. Advance turn
+  G.turn++;
+  
+  // 14. Check endings
+  checkEndings();
+  
+  render();
+}
+
+function checkEndings() {
+  if (G.ending === 'acquisition') {
+    showEnding('Acquired! 🤝', 
+      'Prodal jsi firmu za ' + fmt(G.valuation) + ' CZK. Zlatý padák secured.',
+      'acqui-hire');
+    return;
+  }
+  if (G.cash < -500000) {
+    showEnding('Bankrot! 💀', 
+      'Došly prachy. Zlín sends its regards.',
+      'bankruptcy');
+    return;
+  }
+  if (G.valuation >= 1000000000) {
+    showEnding('UNICORN! 🦄', 
+      'Valuace přes miliardu! Ze Zlína na vrchol světa. IPO time!',
+      'ipo');
+    return;
+  }
+  if (G.turn > 60) {
+    if (G.valuation >= 100000000) {
+      showEnding('Tech Mogul 👑', 'Po 5 letech máš firmu za ' + fmt(G.valuation) + ' CZK. Respekt.', 'mogul');
+    } else if (G.valuation >= 10000000) {
+      showEnding('Solid Business 📊', 'Stabilní byznys za ' + fmt(G.valuation) + '. Not bad, kid.', 'solid');
+    } else {
+      showEnding('Lifestyle Business 🏖️', 'Malá firmička, ale vlastní. Aspoň máš klid.', 'lifestyle');
+    }
+  }
+}
+
+function showEnding(title, subtitle, type) {
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('game-screen').style.display = 'none';
+  const es = document.getElementById('end-screen');
+  es.classList.add('active');
+  es.style.display = 'flex';
+  
+  const colors = {ipo:'var(--cyan)',bankruptcy:'var(--red)',mogul:'var(--yellow)',acquisition:'var(--green)',solid:'var(--mag)',lifestyle:'var(--dim)'};
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-title').style.color = colors[type]||'var(--cyan)';
+  document.getElementById('end-subtitle').textContent = subtitle;
+  document.getElementById('end-stats').innerHTML = `
+    <p>Turns: ${G.turn} | Final Cash: ${fmt(G.cash)} CZK</p>
+    <p>Final Valuation: ${fmt(G.valuation)} CZK</p>
+    <p>Products: ${G.activeProducts.length} | Team: ${G.employees.length}</p>
+    <p>Research: ${G.unlockedResearch.length}/${RESEARCH_TREE.length}</p>
+    <p>Milestones: ${G.achievedMilestones.length}/${MILESTONES.length}</p>
+    <p>Markets: ${G.marketExpansion+1} | Equity Given: ${G.equityGiven}%</p>
+    <p>Difficulty: ${G.difficulty}</p>
+  `;
+  
+  localStorage.removeItem('startup_empire_save');
+}
+
+// ===== MODAL =====
+function showEventModal(ev) {
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `<h2>${ev.name}</h2><p>${ev.desc}</p>
+    <div class="choices">${ev.choices.map((c,i) => 
+      `<button onclick="resolveEvent(${EVENTS.indexOf(ev)},${i})">${c.text}</button>`
+    ).join('')}</div>`;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function resolveEvent(evIdx, choiceIdx) {
+  const ev = EVENTS[evIdx];
+  const choice = ev.choices[choiceIdx];
+  const result = choice.effect(G);
+  addLog(`${ev.name}: ${result||'Done'}`, 'info');
+  closeModal();
+  
+  if (G.ending) checkEndings();
+  render();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function showSettings() {
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `<h2>⚙️ Settings</h2>
+    <div style="margin:12px 0">
+      <button onclick="G.settings.soundOn=!G.settings.soundOn;showSettings()">${G.settings.soundOn?'🔊 Sound ON':'🔇 Sound OFF'}</button>
+    </div>
+    <div style="margin:12px 0">
+      <button onclick="saveGame();closeModal()">💾 Save Game</button>
+      <button class="danger" onclick="if(confirm('Really?')){localStorage.removeItem('startup_empire_save');location.reload()}" style="margin-left:8px">🗑️ Delete Save</button>
+    </div>
+    <button onclick="closeModal()">Close</button>`;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+// ===== LOG & NOTIFICATIONS =====
+function addLog(text, type='info') {
+  G.eventLog.push({turn: G.turn, text, type});
+}
+
+function notify(text, bad=false) {
+  const n = document.createElement('div');
+  n.className = 'notification' + (bad?' bad':'');
+  n.textContent = text;
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(), 3000);
+}
+
+// ===== SAVE/LOAD =====
+function saveGame() {
+  localStorage.setItem('startup_empire_save', JSON.stringify(G));
+  playSound('success');
+  notify('💾 Game saved!');
+}
+
+function loadGame() {
+  const data = localStorage.getItem('startup_empire_save');
+  if (!data) return;
+  G = JSON.parse(data);
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').classList.add('active');
+  document.getElementById('game-screen').style.display = 'grid';
+  render();
+}
+
+// ===== INIT =====
+function startNewGame() {
+  playSound('success');
+  const diff = document.querySelector('.diff-btn.selected')?.dataset.diff || 'normal';
+  G = defaultState(diff);
+  generateHires();
+  G.history.cash.push(G.cash);
+  G.history.valuation.push(G.valuation);
+  G.history.revenue.push(0);
+  
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').classList.add('active');
+  document.getElementById('game-screen').style.display = 'grid';
+  
+  addLog('🚀 Startup Empire začíná! Máš '+fmt(G.cash)+' CZK a velký sen.', 'good');
+  render();
+}
+
+// Difficulty selection
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    Audio.init();
+    playSound('click');
+  });
+});
+
+// Check for save
+if (localStorage.getItem('startup_empire_save')) {
+  document.getElementById('load-btn').style.display = 'block';
+}
+</script>
+</body>
+</html>

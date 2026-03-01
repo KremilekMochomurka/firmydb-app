@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMPIRE BUILDER — Cesta z Rackové na vrchol</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --card-hover: #1a1a28;
+  --accent: #6c5ce7;
+  --accent2: #00cec9;
+  --gold: #fdcb6e;
+  --red: #ff6b6b;
+  --green: #00b894;
+  --text: #dfe6e9;
+  --muted: #636e72;
+  --border: #2d3436;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ANIMATED BACKGROUND */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(108,92,231,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,206,201,0.06) 0%, transparent 50%);
+  z-index: -1;
+  animation: bgPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* SCREEN MANAGEMENT */
+.screen { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
+.screen.active { display: block; animation: fadeIn 0.4s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* INTRO SCREEN */
+#intro-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; text-align: center;
+}
+
+#intro-screen h1 {
+  font-size: 3rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+#intro-screen .subtitle {
+  color: var(--muted); font-size: 1.1rem; margin-bottom: 40px;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  border: none; color: white; padding: 16px 48px;
+  font-size: 1.2rem; font-family: 'Space Grotesk', sans-serif;
+  border-radius: 12px; cursor: pointer;
+  transition: all 0.3s; font-weight: 600;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(108,92,231,0.4);
+}
+
+/* TOP BAR */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.9); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.topbar-stats {
+  display: flex; gap: 24px; flex-wrap: wrap;
+}
+
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-size: 1.1rem; font-weight: 700; }
+.stat-value.money { color: var(--green); }
+.stat-value.rep { color: var(--accent); }
+.stat-value.energy { color: var(--gold); }
+.stat-value.stress { color: var(--red); }
+
+.week-display {
+  font-size: 0.85rem; color: var(--muted);
+}
+.week-display span { color: var(--accent2); font-weight: 700; font-size: 1rem; }
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+
+.card:hover { border-color: var(--accent); background: var(--card-hover); }
+
+.card h3 { margin-bottom: 8px; font-size: 1.1rem; }
+.card p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+
+/* NARRATOR */
+.narrator {
+  background: linear-gradient(135deg, rgba(108,92,231,0.1), rgba(0,206,201,0.05));
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  margin: 16px 0;
+  border-radius: 0 12px 12px 0;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.narrator::before {
+  content: '💬 ';
+}
+
+/* CHOICES */
+.choices {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 16px;
+}
+
+.choice-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.choice-btn:hover {
+  border-color: var(--accent);
+  background: var(--card-hover);
+  transform: translateX(4px);
+}
+
+.choice-btn .cost {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.choice-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* SECTIONS */
+.section-title {
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 24px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* SKILLS GRID */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.skill-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.skill-name { font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+.skill-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.skill-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.skill-level { font-size: 1.1rem; font-weight: 700; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab:hover { color: var(--text); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s; }
+
+/* LOG */
+.log-entry {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(45,52,54,0.5);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.log-entry .log-week { color: var(--accent2); font-weight: 600; margin-right: 8px; }
+.log-entry.positive { color: var(--green); }
+.log-entry.negative { color: var(--red); }
+.log-entry.special { color: var(--gold); }
+
+/* NEXT WEEK BTN */
+.next-week-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  background: linear-gradient(135deg, var(--accent), #a855f7);
+  border: none;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.next-week-btn:hover {
+  box-shadow: 0 6px 24px rgba(108,92,231,0.4);
+  transform: translateY(-1px);
+}
+
+/* EVENT MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 500px;
+  width: 100%;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal h2 { margin-bottom: 12px; }
+
+/* PROGRESS BAR */
+.progress-section {
+  margin: 16px 0;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* EMPLOYEES */
+.employee-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.employee-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: var(--card-hover);
+}
+
+.employee-info { flex: 1; }
+.employee-name { font-weight: 600; font-size: 0.9rem; }
+.employee-role { font-size: 0.75rem; color: var(--muted); }
+
+/* ACHIEVEMENT */
+.achievement-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(253,203,110,0.15), rgba(108,92,231,0.15));
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 16px 24px;
+  z-index: 300;
+  animation: achieveIn 0.5s ease, achieveOut 0.5s ease 2.5s forwards;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@keyframes achieveIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes achieveOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+.achievement-popup .achieve-icon { font-size: 1.5rem; }
+.achievement-popup .achieve-text { font-size: 0.85rem; }
+.achievement-popup .achieve-text strong { color: var(--gold); display: block; }
+
+/* GAME OVER */
+#gameover-screen {
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameover-screen h1 {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.final-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+  max-width: 400px;
+}
+
+.final-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.final-stat .fs-label { font-size: 0.75rem; color: var(--muted); }
+.final-stat .fs-value { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .topbar-stats { gap: 12px; }
+  .stat-value { font-size: 0.9rem; }
+  #intro-screen h1 { font-size: 2rem; }
+  .skills-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro-screen" class="screen active">
+  <div style="margin-bottom:20px;font-size:4rem;">🏗️</div>
+  <h1>EMPIRE BUILDER</h1>
+  <p class="subtitle">Cesta z Rackové na vrchol</p>
+  <p style="color:var(--muted);max-width:500px;margin-bottom:30px;line-height:1.6;">
+    Je ti 20. Máš milion na účtu, práci v AI firmě a ostrý sarkasmus.<br>
+    Otázka není <em>jestli</em> uspěješ — ale <em>jak moc</em>.
+  </p>
+  <button class="start-btn" onclick="startGame()">Začít budovat impérium →</button>
+  <p style="color:var(--border);margin-top:40px;font-size:0.75rem;">
+    Strategická simulace • ~2-3 hodiny gameplay • Každé rozhodnutí se počítá
+  </p>
+</div>
+
+<!-- MAIN GAME -->
+<div id="game-screen" class="screen">
+  <div class="topbar">
+    <div class="topbar-stats">
+      <div class="stat">
+        <span class="stat-label">Cash</span>
+        <span class="stat-value money mono" id="s-money">1,000,000</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Reputace</span>
+        <span class="stat-value rep mono" id="s-rep">10</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Energie</span>
+        <span class="stat-value energy mono" id="s-energy">100</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Stres</span>
+        <span class="stat-value stress mono" id="s-stress">5</span>
+      </div>
+    </div>
+    <div class="week-display">
+      Týden <span id="s-week">1</span> / 104
+    </div>
+  </div>
+
+  <div style="padding:20px;max-width:900px;margin:0 auto;">
+    <!-- NARRATOR -->
+    <div class="narrator" id="narrator-text">
+      Pondělí ráno. Budeš budit Zlín, nebo se Zlín probudí sám? Spoiler: bez tebe to nepůjde.
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('actions')">⚡ Akce</button>
+      <button class="tab" onclick="switchTab('business')">🏢 Byznys</button>
+      <button class="tab" onclick="switchTab('skills')">📊 Skills</button>
+      <button class="tab" onclick="switchTab('people')">👥 Lidé</button>
+      <button class="tab" onclick="switchTab('log')">📜 Log</button>
+    </div>
+
+    <!-- ACTIONS TAB -->
+    <div id="tab-actions" class="tab-content active">
+      <div id="weekly-choices"></div>
+      <button class="next-week-btn" id="next-week-btn" onclick="nextWeek()">
+        Další týden →
+      </button>
+    </div>
+
+    <!-- BUSINESS TAB -->
+    <div id="tab-business" class="tab-content">
+      <div id="business-content"></div>
+    </div>
+
+    <!-- SKILLS TAB -->
+    <div id="tab-skills" class="tab-content">
+      <div id="skills-content"></div>
+    </div>
+
+    <!-- PEOPLE TAB -->
+    <div id="tab-people" class="tab-content">
+      <div id="people-content"></div>
+    </div>
+
+    <!-- LOG TAB -->
+    <div id="tab-log" class="tab-content">
+      <div id="log-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameover-screen" class="screen">
+  <div style="font-size:4rem;margin-bottom:20px;" id="go-emoji">🏆</div>
+  <h1 id="go-title">Konec hry</h1>
+  <p style="color:var(--muted);margin-bottom:8px;" id="go-subtitle"></p>
+  <div class="final-stats" id="go-stats"></div>
+  <div class="narrator" id="go-narrator" style="max-width:500px;text-align:left;"></div>
+  <button class="start-btn" style="margin-top:24px;" onclick="location.reload()">Hrát znovu</button>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title"></h2>
+    <p id="modal-text" style="color:var(--muted);line-height:1.6;margin-bottom:16px;"></p>
+    <div id="modal-choices" class="choices"></div>
+  </div>
+</div>
+
+<script>
+// ============== GAME STATE ==============
+let G = {
+  week: 1,
+  money: 1000000,
+  rep: 10,
+  energy: 100,
+  stress: 5,
+  maxEnergy: 100,
+  
+  // Skills (0-100)
+  skills: {
+    sales: 25,
+    coding: 10,
+    leadership: 15,
+    marketing: 8,
+    networking: 12,
+    fitness: 60,
+    finance: 30,
+    negotiation: 20,
+    design: 5,
+    speaking: 10
+  },
+  
+  // Business
+  hasCompany: false,
+  companyName: '',
+  companyType: '',
+  companyRevenue: 0,
+  companyWeek: 0,
+  products: [],
+  employees: [],
+  clients: [],
+  monthlyExpenses: 0,
+  
+  // Job
+  hasJob: true,
+  jobTitle: 'Business Development Manager',
+  jobCompany: 'Apertia',
+  salary: 90000,
+  jobPerformance: 70,
+  
+  // Relationships
+  contacts: [],
+  mentor: null,
+  partner: null,
+  
+  // Achievements
+  achievements: [],
+  
+  // Income/expense tracking
+  monthlyIncome: 0,
+  investmentReturns: 0,
+  investments: [],
+  
+  // State flags
+  actionsThisWeek: 0,
+  maxActionsPerWeek: 3,
+  log: [],
+  events: [],
+  
+  // Special flags
+  flags: {}
+};
+
+// ============== DATA ==============
+
+const NARRATOR_LINES = {
+  start: [
+    "Pondělí ráno. Káva je hotová, ambice taky. Let's go.",
+    "Nový týden. Svět zatím neví, co ho čeká.",
+    "Vstáváš v 6:00, protože budíček je pro průměrné lidi. Ty máš disciplínu.",
+    "Další týden, další šance dokázat, že statistika je jen číslo pro ostatní.",
+    "Pondělí. Někdo jiný by řekl 'zase do práce.' Ty říkáš 'pokračuju.'",
+  ],
+  broke: [
+    "Cash flow vypadá... zajímavě. Jako v tom filmu, kde hlavní hrdina nemá na nájem.",
+    "Účet krvácí. Čas na strategický pivot, ne na paniku.",
+  ],
+  rich: [
+    "Účet vypadá jako telefon číslo. Ne špatný.",
+    "S tímhle cash flow by ses mohl stát patronem celého Rackového.",
+  ],
+  stressed: [
+    "Stres level: Jordan Belfort před FBI. Možná zpomal.",
+    "Tvoje nadledvinky právě podaly výpověď. Dej si pauzu.",
+  ],
+  company_early: [
+    "Startup život. Kde kafe je palivo a pochybnosti jsou nepřítel.",
+    "Tvoje firma je jako novorozeně — potřebuje nonstop pozornost a peníze.",
+  ],
+  company_growing: [
+    "Firma roste. Tenhle feeling je lepší než jakýkoli gym PR.",
+    "Revenue křivka jde nahoru. Přesně jak jsi plánoval.",
+  ]
+};
+
+const RANDOM_EVENTS = [
+  {
+    id: 'investor_interest',
+    title: '📞 Investor volá',
+    text: 'Ozval se ti angel investor z Prahy. Prý slyšel o tvém projektu a chce se potkat.',
+    condition: () => G.hasCompany && G.rep >= 25,
+    choices: [
+      { text: 'Jet na meeting do Prahy', effect: () => { G.energy -= 15; G.money -= 5000; G.rep += 8; G.money += rand(200000, 500000); addLog('Investor dál ' + fmt(G.money) + ' CZK', 'positive'); checkAchieve('first_investment'); }, cost: '-15⚡ -5k CZK' },
+      { text: 'Poslat pitch deck mailem', effect: () => { G.rep += 3; if(Math.random()>0.5){ G.money += rand(100000,200000); addLog('Investor přispěl po emailu','positive');} else { addLog('Investor neodpověděl','negative');} }, cost: '-0⚡' },
+    ]
+  },
+  {
+    id: 'conference',
+    title: '🎤 Tech konference v Brně',
+    text: 'Máš šanci vystoupit na lokální tech konferenci. 5 minut na pódiu, stovky lidí v publiku.',
+    condition: () => G.rep >= 15,
+    choices: [
+      { text: 'Přednášet o AI v byznysu', effect: () => { G.energy -= 20; G.skills.speaking += rand(3,8); G.rep += rand(5,15); G.skills.networking += 3; addLog('Přednáška na konferenci — rep +','positive'); }, cost: '-20⚡ +Speaking +Rep' },
+      { text: 'Jít jen networkovat', effect: () => { G.energy -= 10; G.skills.networking += rand(3,6); addContact(); addLog('Networking na konferenci','positive'); }, cost: '-10⚡ +Networking' },
+      { text: 'Přeskočit — mám práci', effect: () => { G.energy += 5; addLog('Konferenci přeskočena','negative'); }, cost: '+5⚡' },
+    ]
+  },
+  {
+    id: 'burnout_warning',
+    title: '🔥 Burnout na obzoru',
+    text: 'Poslední dobou spíš 5 hodin, jíš jak robot a poslední sport byl... kdy vlastně?',
+    condition: () => G.stress > 60,
+    choices: [
+      { text: 'Týden volna — mentální reset', effect: () => { G.stress -= 30; G.energy = G.maxEnergy; G.skills.fitness -= 2; addLog('Mental health break — stres dolů','positive'); }, cost: '-30 Stres, full ⚡' },
+      { text: 'Prostě přežít — to zvládnu', effect: () => { G.stress += 10; if(G.stress > 90){ G.energy = Math.floor(G.energy*0.5); addLog('Burnout! Energie na polovině','negative');} }, cost: 'Risk: burnout' },
+    ]
+  },
+  {
+    id: 'client_big',
+    title: '💼 Velký klient',
+    text: 'Firma z automotive sektoru hledá AI řešení. Budget: 500k-2M CZK. Ale chtějí to za 6 týdnů.',
+    condition: () => G.hasCompany && G.skills.sales >= 30,
+    choices: [
+      { text: 'Vzít zakázku — all in', effect: () => { G.stress += 20; G.energy -= 25; let rev = rand(500000,2000000); G.money += rev; G.companyRevenue += rev; G.rep += 10; addLog('Zakázka za ' + fmt(rev) + ' CZK!','positive'); checkAchieve('first_million_revenue'); }, cost: '+20 Stres, -25⚡' },
+      { text: 'Vyjednat reálnější deadline', effect: () => { G.skills.negotiation += 5; G.stress += 8; let rev = rand(300000,800000); G.money += rev; G.companyRevenue += rev; addLog('Zakázka (menší scope) za ' + fmt(rev),'positive'); }, cost: '+8 Stres, +Negotiation' },
+      { text: 'Odmítnout — ještě na to nemám tým', effect: () => { G.rep -= 3; addLog('Odmítnuta velká zakázka','negative'); }, cost: '-3 Rep' },
+    ]
+  },
+  {
+    id: 'tinder_match',
+    title: '💜 Match na Tinderu',
+    text: 'Ambiciózní holka, studuje práva v Brně. Wit level: vysoký. Odpovídá rychle.',
+    condition: () => !G.partner && G.week > 8,
+    choices: [
+      { text: 'Zajímavý challenge — pozvat na kafe', effect: () => { G.energy -= 5; G.stress -= 5; if(Math.random()>0.3){ G.flags.dating = true; G.flags.dateWeek = G.week; addLog('Schůzka dopadla dobře 👀','positive');} else { addLog('Schůzka dopadla... zajímavě','negative');} }, cost: '-5⚡ -5 Stres' },
+      { text: 'Odpovědět sarkasticky a čekat', effect: () => { if(Math.random()>0.5){ G.flags.dating = true; G.flags.dateWeek = G.week; addLog('Sarkasmus zabral — chce se sejít','positive');} else { addLog('Unmatch. Asi moc ostrý humor.','negative');} }, cost: 'RNG' },
+      { text: 'Nemám čas na dating — grind first', effect: () => { G.energy += 5; addLog('Dating odložen','negative'); }, cost: '+5⚡' },
+    ]
+  },
+  {
+    id: 'dating_progress',
+    title: '💜 Druhá schůzka',
+    text: 'Pamatuje si, co jsi říkal minule. Ptá se na tvoje plány. Tohle je jiný level.',
+    condition: () => G.flags.dating && !G.partner && G.week > (G.flags.dateWeek||0)+3,
+    choices: [
+      { text: 'Být upřímný o ambicích i nejistotách', effect: () => { G.partner = {name:'Tereza', week: G.week}; G.stress -= 10; G.skills.leadership += 2; addLog('Nový vztah — Tereza 💜','special'); checkAchieve('found_partner'); }, cost: '-10 Stres' },
+      { text: 'Držet si odstup — ještě uvidím', effect: () => { G.flags.dating = false; addLog('Dating se vypaří...','negative'); }, cost: '' },
+    ]
+  },
+  {
+    id: 'mentor_offer',
+    title: '🧠 Mentor',
+    text: 'Starší podnikatel (exit za 50M) ti nabízí mentoringové setkání 1× měsíčně. Zadarmo — prý mu připomínáš jeho mladší já.',
+    condition: () => !G.mentor && G.rep >= 20 && G.week > 10,
+    choices: [
+      { text: 'Přijmout — tohle je zlato', effect: () => { G.mentor = {name:'Pavel', week: G.week}; G.rep += 5; addLog('Nový mentor: Pavel (50M exit)','special'); checkAchieve('got_mentor'); }, cost: '+5 Rep' },
+      { text: 'Nepotřebuju mentora — self-made', effect: () => { G.rep -= 2; addLog('Odmítnut mentor — ego?','negative'); }, cost: '-2 Rep' },
+    ]
+  },
+  {
+    id: 'competitor',
+    title: '⚔️ Konkurence',
+    text: 'Objevila se firma, která dělá skoro to samé co ty. Mají víc lidí, ale horší produkt.',
+    condition: () => G.hasCompany && G.companyRevenue > 500000,
+    choices: [
+      { text: 'Zdvojnásobit marketing — outpace them', effect: () => { G.money -= rand(50000,150000); G.skills.marketing += rand(3,8); G.rep += 5; addLog('Agresivní marketing vs. konkurence','positive'); }, cost: '-$$$ +Marketing +Rep' },
+      { text: 'Focus na produkt — kvalita vyhraje', effect: () => { G.energy -= 15; G.skills.coding += 5; addLog('Product focus — long game','positive'); }, cost: '-15⚡ +Coding' },
+      { text: 'Navrhnout spolupráci', effect: () => { G.skills.negotiation += 5; if(Math.random()>0.6){ G.rep += 10; G.money += rand(100000,300000); addLog('Merge s konkurencí — win-win!','special');} else { addLog('Konkurence odmítla spolupráci','negative');} }, cost: '+Negotiation, RNG' },
+    ]
+  },
+  {
+    id: 'health_scare',
+    title: '🏥 Zdravotní varování',
+    text: 'Doktor říká: kortizol vysoko, spánek mizerný, imunita na hraně. "Buď zpomalíš, nebo tě tělo zastaví."',
+    condition: () => G.stress > 70 && G.skills.fitness < 40,
+    choices: [
+      { text: 'Vzít to vážně — reorganizovat priority', effect: () => { G.stress -= 25; G.skills.fitness += 10; G.maxActionsPerWeek = 2; setTimeout(()=>{G.maxActionsPerWeek=3;},0); addLog('Zdravotní restart — méně akcí tento týden','positive'); }, cost: '-25 Stres, +10 Fitness' },
+      { text: '"Doktor přehání" — jet dál', effect: () => { G.stress += 15; G.energy -= 20; addLog('Ignorovaný doktor... riskantní','negative'); }, cost: '+15 Stres, -20⚡' },
+    ]
+  },
+  {
+    id: 'viral_post',
+    title: '📱 Virální post',
+    text: 'Tvůj LinkedIn post o AI v českém byznysu má 50k views a roste. Inbox exploduje.',
+    condition: () => G.skills.marketing >= 20 && G.rep >= 20,
+    choices: [
+      { text: 'Odpovídat všem — maximalizovat networking', effect: () => { G.energy -= 20; G.rep += rand(10,25); G.skills.networking += 5; addContact(); addContact(); addLog('Viral post — masivní rep boost!','special'); checkAchieve('viral'); }, cost: '-20⚡ +Rep +Contacts' },
+      { text: 'Selektivně odpovědět jen VIP lidem', effect: () => { G.energy -= 8; G.rep += rand(5,12); addContact(); addLog('Strategické odpovědi na virál','positive'); }, cost: '-8⚡ +Rep' },
+    ]
+  },
+  {
+    id: 'crypto_opportunity',
+    title: '🪙 Crypto opportunity',
+    text: 'Kamarád ti píše o "zaručeném" tokenu, co má 10× potential. Prý insider info.',
+    condition: () => G.money >= 200000,
+    choices: [
+      { text: 'Investovat 100k — YOLO', effect: () => { G.money -= 100000; if(Math.random()>0.7){ G.money += 500000; addLog('Crypto 5× — luck nebo skill?','special'); checkAchieve('crypto_win');} else { addLog('Crypto -100k. Poučení: žádné "zaručené" věci.','negative');} }, cost: '-100k, RNG (30% šance na 5×)' },
+      { text: 'Dát 20k pro srandu — small bet', effect: () => { G.money -= 20000; if(Math.random()>0.6){ G.money += 80000; addLog('Crypto small win +60k','positive');} else { addLog('Crypto -20k. Oh well.','negative');} }, cost: '-20k, RNG' },
+      { text: 'Pass — tenhle příběh znám', effect: () => { G.skills.finance += 3; addLog('Crypto odmítnuto — disciplína','positive'); }, cost: '+Finance skill' },
+    ]
+  },
+  {
+    id: 'office_space',
+    title: '🏢 Kancelář k pronájmu',
+    text: 'Krásnej coworking v centru Zlína. 15k/měsíc, ale vypadá profi a přitáhne klienty.',
+    condition: () => G.hasCompany && !G.flags.hasOffice && G.money >= 200000,
+    choices: [
+      { text: 'Pronajmout — image matters', effect: () => { G.flags.hasOffice = true; G.monthlyExpenses += 15000; G.rep += 8; addLog('Nová kancelář ve Zlíně!','positive'); }, cost: '+15k/měs, +8 Rep' },
+      { text: 'Zatím remote — šetřit cash', effect: () => { addLog('Zůstáváme remote','negative'); }, cost: '' },
+    ]
+  },
+  {
+    id: 'media_interview',
+    title: '📺 Rozhovor pro CzechCrunch',
+    text: 'CzechCrunch chce rozhovor: "Dvacetiletý z Rackového buduje AI firmu." Dobrá publicita, ale exposure.',
+    condition: () => G.hasCompany && G.rep >= 35,
+    choices: [
+      { text: 'Dát rozhovor — visibility je král', effect: () => { G.rep += rand(15,30); G.skills.speaking += 5; addLog('CzechCrunch rozhovor — massive rep!','special'); checkAchieve('media'); }, cost: '+Rep +Speaking' },
+      { text: 'Odmítnout — nechci attention', effect: () => { addLog('Média odmítnuta — stealth mode','negative'); }, cost: '' },
+    ]
+  },
+  {
+    id: 'family_visit',
+    title: '🏠 Rodina v Rackovém',
+    text: 'Máma volá, že tě dlouho neviděla. Táta se chce pochlubit zahrádkou.',
+    condition: () => G.week % 12 < 2,
+    choices: [
+      { text: 'Jet domů na víkend', effect: () => { G.stress -= 15; G.energy -= 5; addLog('Víkend s rodinou — grounding','positive'); }, cost: '-15 Stres, -5⚡' },
+      { text: 'Zavolat aspoň — nemám čas jet', effect: () => { G.stress -= 5; addLog('Hovor s rodinou','positive'); }, cost: '-5 Stres' },
+    ]
+  },
+  {
+    id: 'book_insight',
+    title: '📚 Knižní insight',
+    text: 'Dočetl jsi další knihu. Tenhle mindset shift je přesně to, co jsi potřeboval.',
+    condition: () => Math.random() > 0.7,
+    choices: [
+      { text: '"Ego je nepřítel" — stay humble', effect: () => { G.skills.leadership += 5; G.stress -= 5; addLog('Kniha: Ego je nepřítel — leadership up','positive'); }, cost: '+5 Leadership' },
+      { text: '"Bohatý táta" — optimize finance', effect: () => { G.skills.finance += 5; addLog('Kniha: Finance mindset upgrade','positive'); }, cost: '+5 Finance' },
+      { text: '"Die with Zero" — optimize experiences', effect: () => { G.stress -= 10; G.rep += 3; addLog('Kniha: Die with Zero — life balance','positive'); }, cost: '-10 Stres' },
+    ]
+  }
+];
+
+const WEEKLY_ACTIONS = [
+  // WORK
+  {
+    cat: '💼 Práce',
+    actions: [
+      {
+        name: 'Grindovat v Apertii',
+        desc: 'Tvrdá práce, dobrý výsledky. Plat jistý.',
+        condition: () => G.hasJob,
+        effect: () => { G.energy -= 20; G.skills.sales += rand(1,4); G.jobPerformance += rand(2,5); if(G.jobPerformance > 100) G.jobPerformance = 100; addLog('Grind v Apertii — performance up','positive'); },
+        cost: '-20⚡',
+      },
+      {
+        name: 'Dát výpověď v Apertii',
+        desc: 'All-in na vlastní firmu. Riskantní, ale ENTJ move.',
+        condition: () => G.hasJob && G.hasCompany && G.companyRevenue > 300000,
+        effect: () => { G.hasJob = false; G.salary = 0; G.energy += 20; G.maxActionsPerWeek = 4; G.rep += 5; addLog('Výpověď v Apertii — full-time founder!','special'); checkAchieve('quit_job'); },
+        cost: 'Žádný plat, +1 akce/týden',
+      }
+    ]
+  },
+  // BUSINESS
+  {
+    cat: '🚀 Byznys',
+    actions: [
+      {
+        name: 'Založit firmu',
+        desc: 'S.R.O., IČO, všechno official. Přesně jak jsi plánoval.',
+        condition: () => !G.hasCompany && G.money >= 50000,
+        effect: () => {
+          G.hasCompany = true;
+          G.money -= 50000;
+          G.companyWeek = G.week;
+          G.companyName = 'TBD';
+          G.energy -= 15;
+          G.rep += 5;
+          addLog('Firma založena! 🎉','special');
+          checkAchieve('founded_company');
+          showModal('🏢 Jméno firmy', 'Vymysli název. Něco, co říká: budoucnost.', [
+            { text: 'Nexus AI', effect: () => { G.companyName = 'Nexus AI'; G.companyType = 'AI Solutions'; }},
+            { text: 'Vaněk Technologies', effect: () => { G.companyName = 'Vaněk Technologies'; G.companyType = 'Tech Consulting'; }},
+            { text: 'Rackové Labs', effect: () => { G.companyName = 'Rackové Labs'; G.companyType = 'R&D Studio'; G.rep += 3; }},
+            { text: 'Apex Digital', effect: () => { G.companyName = 'Apex Digital'; G.companyType = 'Digital Agency'; }},
+          ]);
+        },
+        cost: '-50k CZK, -15⚡',
+      },
+      {
+        name: 'Hledat klienty',
+        desc: 'Cold outreach, LinkedIn, networking. Hustle mode.',
+        condition: () => G.hasCompany,
+        effect: () => {
+          G.energy -= 15;
+          G.skills.sales += rand(2,5);
+          let chance = (G.skills.sales + G.skills.networking + G.rep) / 300;
+          if(Math.random() < chance + 0.3) {
+            let val = rand(30000, 200000) * (1 + G.skills.negotiation/100);
+            val = Math.floor(val);
+            G.clients.push({name: randomClientName(), value: val, week: G.week});
+            G.money += val;
+            G.companyRevenue += val;
+            addLog('Nový klient! +' + fmt(val) + ' CZK','positive');
+          } else {
+            addLog('Hledání klientů — zatím nic','negative');
+          }
+        },
+        cost: '-15⚡, +Sales',
+      },
+      {
+        name: 'Pracovat na produktu',
+        desc: 'Kód, design, MVP. Budovat něco reálného.',
+        condition: () => G.hasCompany,
+        effect: () => {
+          G.energy -= 20;
+          G.skills.coding += rand(2,5);
+          G.skills.design += rand(1,3);
+          if(G.products.length === 0 || G.products[G.products.length-1].progress >= 100) {
+            G.products.push({name: randomProductName(), progress: rand(15,30), revenue: 0});
+          } else {
+            G.products[G.products.length-1].progress += rand(10,25);
+            if(G.products[G.products.length-1].progress >= 100) {
+              G.products[G.products.length-1].progress = 100;
+              addLog('Produkt dokončen: ' + G.products[G.products.length-1].name + '!','special');
+              G.rep += 8;
+              checkAchieve('first_product');
+            }
+          }
+          addLog('Práce na produktu','positive');
+        },
+        cost: '-20⚡, +Coding +Design',
+      },
+      {
+        name: 'Najmout zaměstnance',
+        desc: 'Tým je všechno. Nemůžeš škálovat sám.',
+        condition: () => G.hasCompany && G.money >= 80000,
+        effect: () => {
+          G.money -= 30000; // hiring cost
+          let emp = generateEmployee();
+          G.employees.push(emp);
+          G.monthlyExpenses += emp.salary;
+          G.energy -= 10;
+          addLog('Nový zaměstnanec: ' + emp.name + ' (' + emp.role + ')','positive');
+          checkAchieve('first_hire');
+        },
+        cost: '-30k + plat/měs, -10⚡',
+      },
+      {
+        name: 'Marketing push',
+        desc: 'Social media, content, PR. Vybudovat brand.',
+        condition: () => G.hasCompany,
+        effect: () => {
+          let cost = rand(10000, 50000);
+          G.money -= cost;
+          G.energy -= 10;
+          G.skills.marketing += rand(2,6);
+          G.rep += rand(3,8);
+          addLog('Marketing push za ' + fmt(cost) + ' CZK','positive');
+        },
+        cost: '-10-50k CZK, -10⚡, +Marketing +Rep',
+      }
+    ]
+  },
+  // PERSONAL
+  {
+    cat: '🧠 Osobní rozvoj',
+    actions: [
+      {
+        name: 'Gym session',
+        desc: '4× týdně, žádné výmluvy. Disciplína je lifestyle.',
+        condition: () => true,
+        effect: () => { G.energy -= 10; G.stress -= 8; G.skills.fitness += rand(1,3); addLog('Gym ✓','positive'); },
+        cost: '-10⚡, -8 Stres, +Fitness',
+      },
+      {
+        name: 'Networking event',
+        desc: 'Jít mezi lidi. Ne každý stojí za čas, ale jeden kontakt může změnit hru.',
+        condition: () => true,
+        effect: () => { G.energy -= 12; G.skills.networking += rand(2,5); G.rep += rand(1,4); addContact(); addLog('Networking — nový kontakt','positive'); },
+        cost: '-12⚡, +Networking +Rep',
+      },
+      {
+        name: 'Online kurz',
+        desc: 'Udemy, Coursera, YouTube rabbit hole. Investice do sebe.',
+        condition: () => true,
+        effect: () => {
+          G.energy -= 8;
+          G.money -= 2000;
+          let skills = Object.keys(G.skills);
+          let sk = skills[Math.floor(Math.random()*skills.length)];
+          G.skills[sk] += rand(3,8);
+          addLog('Online kurz: ' + sk + ' +','positive');
+        },
+        cost: '-8⚡, -2k CZK, random skill +',
+      },
+      {
+        name: 'Odpočinek',
+        desc: 'Někdy je nejproduktivnější věc... nic nedělat.',
+        condition: () => true,
+        effect: () => { G.energy += 25; G.stress -= 12; addLog('Rest day — recharge','positive'); },
+        cost: '+25⚡, -12 Stres',
+      },
+      {
+        name: 'Investovat',
+        desc: 'ETF, akcie, nebo alternativy. Peníze pracují za tebe.',
+        condition: () => G.money >= 50000,
+        effect: () => {
+          let amt = Math.min(G.money * 0.2, 500000);
+          amt = Math.floor(amt);
+          G.money -= amt;
+          G.investments.push({amount: amt, week: G.week, returns: 0});
+          G.skills.finance += rand(1,4);
+          addLog('Investice ' + fmt(amt) + ' CZK do portfolia','positive');
+        },
+        cost: '20% cash, +Finance',
+      }
+    ]
+  }
+];
+
+const ACHIEVEMENTS = [
+  { id: 'founded_company', name: '🏢 Founder', desc: 'Založil jsi firmu' },
+  { id: 'first_product', name: '🚀 Shipping', desc: 'Dokončil jsi první produkt' },
+  { id: 'first_hire', name: '👥 Boss', desc: 'Najal jsi prvního zaměstnance' },
+  { id: 'first_million_revenue', name: '💰 Milionář', desc: 'Revenue přes 1M CZK' },
+  { id: 'first_investment', name: '🤝 Funded', desc: 'Získal jsi investici' },
+  { id: 'quit_job', name: '🔥 Full-time founder', desc: 'Odešel jsi z Apertie' },
+  { id: 'got_mentor', name: '🧠 Apprentice', desc: 'Získal jsi mentora' },
+  { id: 'found_partner', name: '💜 Not Solo', desc: 'Našel jsi partnerku' },
+  { id: 'viral', name: '📱 Viral', desc: 'Tvůj content explodoval' },
+  { id: 'crypto_win', name: '🪙 Degen Win', desc: 'Crypto gamble vyšel' },
+  { id: 'media', name: '📺 Famous', desc: 'Rozhovor v médiích' },
+  { id: 'ten_employees', name: '🏗️ Scale', desc: '10+ zaměstnanců' },
+  { id: 'net_worth_5m', name: '💎 5M Club', desc: 'Net worth přes 5M CZK' },
+  { id: 'net_worth_10m', name: '👑 Tycoon', desc: 'Net worth přes 10M CZK' },
+  { id: 'all_skills_50', name: '🎯 Renaissance Man', desc: 'Všechny skilly nad 50' },
+  { id: 'revenue_10m', name: '📈 Unicorn Dream', desc: 'Celkový revenue 10M+' },
+];
+
+// ============== HELPERS ==============
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fmt(n) { return Math.floor(n).toLocaleString('cs-CZ'); }
+function cap(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+function addLog(text, type = '') {
+  G.log.unshift({ week: G.week, text, type });
+  if(G.log.length > 200) G.log.pop();
+}
+
+function addContact() {
+  const names = ['Martin K.','Jana P.','Tomáš R.','Eva S.','Lukáš D.','Petra H.','Adam V.','Klára M.','David B.','Nikola T.','Jakub F.','Simona L.','Ondřej Z.','Barbora K.','Filip N.'];
+  const roles = ['CTO @ startup','Investor','Marketing lead','Dev senior','VC analyst','Founder','Freelancer','Product manager','Designer','Data scientist'];
+  G.contacts.push({
+    name: names[rand(0,names.length-1)],
+    role: roles[rand(0,roles.length-1)],
+    week: G.week
+  });
+}
+
+function randomClientName() {
+  const names = ['TechnoServ','AutoMotive CZ','BioLab Brno','FinFlow','GreenEnergy s.r.o.','MediaMax','RetailPro','EduTech CZ','HealthData','SmartCity Zlín','LogiTrack','FoodTech Prague'];
+  return names[rand(0,names.length-1)];
+}
+
+function randomProductName() {
+  const names = ['AI Dashboard','Predictive Analytics Tool','Chatbot Platform','Data Pipeline','ML Recommender','Process Automator','Smart CRM','Vision Inspector','NLP Engine','Voice Assistant SDK'];
+  return names[rand(0,names.length-1)];
+}
+
+function generateEmployee() {
+  const fnames = ['Marek','Lucie','Petr','Kateřina','Jan','Monika','Vojtěch','Tereza','Radek','Simona'];
+  const lnames = ['Novák','Svobodová','Dvořák','Černá','Procházka','Kučerová','Veselý','Horáková','Němec','Pokorná'];
+  const roles = ['Frontend Dev','Backend Dev','Designer','Sales Rep','Marketing','Data Engineer','QA','DevOps','Product Owner','AI/ML Engineer'];
+  const emojis = ['👨‍💻','👩‍💻','🎨','🤝','📣','📊','🔍','⚙️','📋','🤖'];
+  let ri = rand(0,roles.length-1);
+  return {
+    name: fnames[rand(0,fnames.length-1)] + ' ' + lnames[rand(0,lnames.length-1)],
+    role: roles[ri],
+    emoji: emojis[ri],
+    salary: rand(35000, 75000),
+    skill: rand(40,80),
+    week: G.week
+  };
+}
+
+function getNarrator() {
+  let pool = NARRATOR_LINES.start;
+  if(G.money < 100000) pool = NARRATOR_LINES.broke;
+  else if(G.money > 5000000) pool = NARRATOR_LINES.rich;
+  if(G.stress > 60) pool = NARRATOR_LINES.stressed;
+  if(G.hasCompany && G.week - G.companyWeek < 12) pool = NARRATOR_LINES.company_early;
+  if(G.hasCompany && G.companyRevenue > 1000000) pool = NARRATOR_LINES.company_growing;
+  return pool[rand(0, pool.length-1)];
+}
+
+function checkAchieve(id) {
+  if(G.achievements.includes(id)) return;
+  G.achievements.push(id);
+  let a = ACHIEVEMENTS.find(x=>x.id===id);
+  if(a) showAchievement(a.name, a.desc);
+}
+
+function showAchievement(name, desc) {
+  let el = document.createElement('div');
+  el.className = 'achievement-popup';
+  el.innerHTML = `<span class="achieve-icon">🏆</span><span class="achieve-text"><strong>${name}</strong>${desc}</span>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+
+function showModal(title, text, choices) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  let cc = document.getElementById('modal-choices');
+  cc.innerHTML = '';
+  choices.forEach(c => {
+    let btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span>${c.text}</span>`;
+    btn.onclick = () => { c.effect(); document.getElementById('modal').classList.remove('active'); updateUI(); };
+    cc.appendChild(btn);
+  });
+  document.getElementById('modal').classList.add('active');
+}
+
+// ============== GAME LOGIC ==============
+
+function startGame() {
+  document.getElementById('intro-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  addLog('Hra začíná — mise: vybudovat impérium', 'special');
+  updateUI();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab-content#tab-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  if(tab === 'business') renderBusiness();
+  if(tab === 'skills') renderSkills();
+  if(tab === 'people') renderPeople();
+  if(tab === 'log') renderLog();
+}
+
+function updateUI() {
+  document.getElementById('s-money').textContent = fmt(G.money) + ' CZK';
+  document.getElementById('s-rep').textContent = G.rep;
+  document.getElementById('s-energy').textContent = G.energy + '/' + G.maxEnergy;
+  document.getElementById('s-stress').textContent = G.stress;
+  document.getElementById('s-week').textContent = G.week;
+  document.getElementById('narrator-text').textContent = getNarrator();
+  renderActions();
+}
+
+function renderActions() {
+  let html = '';
+  let remaining = G.maxActionsPerWeek - G.actionsThisWeek;
+  html += `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">Zbývá akcí: <strong style="color:var(--accent2);">${remaining}</strong> / ${G.maxActionsPerWeek}</p>`;
+  
+  WEEKLY_ACTIONS.forEach(cat => {
+    let visibleActions = cat.actions.filter(a => a.condition());
+    if(visibleActions.length === 0) return;
+    html += `<div class="section-title">${cat.cat}</div><div class="choices">`;
+    visibleActions.forEach(a => {
+      let disabled = remaining <= 0 || G.energy <= 0;
+      html += `<button class="choice-btn ${disabled?'disabled':''}" onclick="${disabled?'':'doAction(this)'}" data-action="${a.name}">
+        <span><strong>${a.name}</strong><br><span style="color:var(--muted);font-size:0.8rem;">${a.desc}</span></span>
+        <span class="cost">${a.cost}</span>
+      </button>`;
+    });
+    html += '</div>';
+  });
+  
+  document.getElementById('weekly-choices').innerHTML = html;
+  document.getElementById('next-week-btn').style.display = remaining <= 0 ? 'block' : 'block';
+}
+
+// Action handler via name lookup
+window.doAction = function(btn) {
+  let name = btn.dataset.action;
+  let action = null;
+  WEEKLY_ACTIONS.forEach(cat => {
+    cat.actions.forEach(a => { if(a.name === name) action = a; });
+  });
+  if(!action || G.actionsThisWeek >= G.maxActionsPerWeek) return;
+  
+  G.actionsThisWeek++;
+  action.effect();
+  
+  // Clamp values
+  G.energy = cap(G.energy, 0, G.maxEnergy);
+  G.stress = cap(G.stress, 0, 100);
+  G.rep = Math.max(0, G.rep);
+  G.money = Math.max(0, G.money);
+  
+  // Cap skills at 100
+  Object.keys(G.skills).forEach(k => { G.skills[k] = cap(G.skills[k], 0, 100); });
+  
+  updateUI();
+};
+
+function nextWeek() {
+  G.week++;
+  G.actionsThisWeek = 0;
+  
+  // Energy regeneration
+  G.energy = Math.min(G.maxEnergy, G.energy + rand(15, 25));
+  
+  // Stress natural decay/growth
+  if(G.hasJob && G.hasCompany) G.stress += rand(2, 6);
+  else if(G.hasCompany) G.stress += rand(1, 4);
+  else G.stress += rand(0, 2);
+  
+  // Monthly processing (every 4 weeks)
+  if(G.week % 4 === 0) {
+    // Salary
+    if(G.hasJob) { G.money += G.salary; addLog('Plat: +' + fmt(G.salary) + ' CZK','positive'); }
+    
+    // Expenses
+    if(G.monthlyExpenses > 0) {
+      G.money -= G.monthlyExpenses;
+      addLog('Provozní náklady: -' + fmt(G.monthlyExpenses) + ' CZK','negative');
+    }
+    
+    // Living expenses
+    let living = rand(15000, 25000);
+    G.money -= living;
+    
+    // Passive revenue from completed products
+    G.products.forEach(p => {
+      if(p.progress >= 100) {
+        let rev = rand(5000, 50000) * (1 + G.skills.marketing/200);
+        rev = Math.floor(rev);
+        p.revenue += rev;
+        G.money += rev;
+        G.companyRevenue += rev;
+      }
+    });
+    
+    // Investment returns
+    G.investments.forEach(inv => {
+      let weeksSince = G.week - inv.week;
+      let monthlyReturn = inv.amount * (rand(1,8)/100/12);
+      monthlyReturn = Math.floor(monthlyReturn);
+      inv.returns += monthlyReturn;
+      G.money += monthlyReturn;
+    });
+    
+    // Employee bonus effects
+    G.employees.forEach(emp => {
+      if(emp.role.includes('Sales')) { 
+        let bonus = rand(10000, 50000);
+        G.money += bonus;
+        G.companyRevenue += bonus;
+      }
+      if(emp.role.includes('Marketing')) G.rep += rand(1,3);
+      if(emp.role.includes('Dev') || emp.role.includes('Engineer')) {
+        G.products.forEach(p => { if(p.progress < 100) p.progress += rand(3,8); });
+      }
+    });
+    
+    // Mentor bonus
+    if(G.mentor) {
+      let sk = ['leadership','negotiation','finance','sales'][rand(0,3)];
+      G.skills[sk] += rand(2,5);
+      if(rand(0,3)===0) addLog('Mentor tip: ' + sk + ' improved','positive');
+    }
+    
+    // Partner effect
+    if(G.partner) {
+      G.stress -= rand(3,8);
+    }
+  }
+  
+  // Random events (1-2 per week)
+  let eventCount = rand(0, 2);
+  let eligible = RANDOM_EVENTS.filter(e => e.condition());
+  for(let i = 0; i < eventCount && eligible.length > 0; i++) {
+    let idx = rand(0, eligible.length-1);
+    let ev = eligible[idx];
+    eligible.splice(idx, 1);
+    showModal(ev.title, ev.text, ev.choices.map(c => ({
+      text: c.text + (c.cost ? ` [${c.cost}]` : ''),
+      effect: c.effect
+    })));
+    break; // Only show one modal at a time
+  }
+  
+  // Achievement checks
+  if(G.employees.length >= 10) checkAchieve('ten_employees');
+  let netWorth = G.money + G.investments.reduce((s,i)=>s+i.amount+i.returns,0);
+  if(netWorth >= 5000000) checkAchieve('net_worth_5m');
+  if(netWorth >= 10000000) checkAchieve('net_worth_10m');
+  if(Object.values(G.skills).every(v=>v>=50)) checkAchieve('all_skills_50');
+  if(G.companyRevenue >= 10000000) checkAchieve('revenue_10m');
+  
+  // Clamp
+  G.energy = cap(G.energy, 0, G.maxEnergy);
+  G.stress = cap(G.stress, 0, 100);
+  G.money = Math.max(0, G.money);
+  Object.keys(G.skills).forEach(k => { G.skills[k] = cap(G.skills[k], 0, 100); });
+  
+  // Game over check
+  if(G.week > 104) {
+    endGame();
+    return;
+  }
+  
+  if(G.money <= 0 && !G.hasJob) {
+    addLog('Bankrot!','negative');
+    endGame(true);
+    return;
+  }
+  
+  updateUI();
+}
+
+function endGame(bankrupt = false) {
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('gameover-screen').classList.add('active');
+  
+  let netWorth = G.money + G.investments.reduce((s,i)=>s+i.amount+i.returns,0);
+  
+  let title, emoji, subtitle, narrator;
+  if(bankrupt) {
+    emoji = '💀'; title = 'Bankrot'; subtitle = 'Peníze došly. Ale poučení ne.';
+    narrator = 'Každý velký podnikatel jednou zkrachoval. Otázka je, jestli se zvedneš. A ty víš, že jo.';
+  } else if(netWorth < 500000) {
+    emoji = '😐'; title = 'Přežil jsi'; subtitle = 'Ale mohl jsi víc.';
+    narrator = 'Dva roky a net worth pod půl mega. Ne špatně, ale... ty jsi ENTJ. Víš, že to jde líp.';
+  } else if(netWorth < 3000000) {
+    emoji = '👍'; title = 'Solidní základ'; subtitle = 'Ne špatné na dva roky.';
+    narrator = 'Třímilionový základ ve 22 letech. Většina lidí o tom jen sní. Ty to žiješ.';
+  } else if(netWorth < 10000000) {
+    emoji = '🔥'; title = 'Serious Player'; subtitle = 'Zlín je ti malý.';
+    narrator = 'Pod deset mega, ale nad tři. Přesně ta trajektorie, co z Rackového vede do Prahy, Berlína, nebo kamkoli chceš.';
+  } else {
+    emoji = '👑'; title = 'Empire Built'; subtitle = 'Z Rackového na vrchol.';
+    narrator = 'Deset mega+ ve 22. Založil jsi firmu, vybudoval tým, a dokázal, že věk je jen číslo. Die with Zero? Nejdřív si ten účet pořádně naplň.';
+  }
+  
+  document.getElementById('go-emoji').textContent = emoji;
+  document.getElementById('go-title').textContent = title;
+  document.getElementById('go-subtitle').textContent = subtitle;
+  document.getElementById('go-narrator').textContent = narrator;
+  
+  document.getElementById('go-stats').innerHTML = `
+    <div class="final-stat"><div class="fs-label">Net Worth</div><div class="fs-value">${fmt(netWorth)} CZK</div></div>
+    <div class="final-stat"><div class="fs-label">Revenue (celkem)</div><div class="fs-value">${fmt(G.companyRevenue)} CZK</div></div>
+    <div class="final-stat"><div class="fs-label">Reputace</div><div class="fs-value">${G.rep}</div></div>
+    <div class="final-stat"><div class="fs-label">Zaměstnanci</div><div class="fs-value">${G.employees.length}</div></div>
+    <div class="final-stat"><div class="fs-label">Achievementy</div><div class="fs-value">${G.achievements.length} / ${ACHIEVEMENTS.length}</div></div>
+    <div class="final-stat"><div class="fs-label">Produkty</div><div class="fs-value">${G.products.filter(p=>p.progress>=100).length}</div></div>
+    ${G.partner ? `<div class="final-stat"><div class="fs-label">Partner</div><div class="fs-value">💜 ${G.partner.name}</div></div>` : ''}
+    ${G.mentor ? `<div class="final-stat"><div class="fs-label">Mentor</div><div class="fs-value">🧠 ${G.mentor.name}</div></div>` : ''}
+  `;
+}
+
+// ============== TAB RENDERERS ==============
+
+function renderBusiness() {
+  let html = '';
+  if(!G.hasCompany) {
+    html = '<div class="card"><h3>Zatím nemáš firmu</h3><p>Založ ji v sekci Akce → Byznys.</p></div>';
+  } else {
+    html += `
+      <div class="card">
+        <h3>${G.companyName} <span style="color:var(--muted);font-size:0.85rem;">(${G.companyType})</span></h3>
+        <p>Založeno: týden ${G.companyWeek} • Celkový revenue: <strong style="color:var(--green);">${fmt(G.companyRevenue)} CZK</strong></p>
+        <p>Měsíční náklady: <span style="color:var(--red);">${fmt(G.monthlyExpenses)} CZK</span> • Zaměstnanci: ${G.employees.length}</p>
+        ${G.flags.hasOffice ? '<p>🏢 Kancelář ve Zlíně</p>' : '<p style="color:var(--muted);">📍 Remote</p>'}
+      </div>
+    `;
+    
+    if(G.products.length > 0) {
+      html += '<div class="section-title">Produkty</div>';
+      G.products.forEach(p => {
+        html += `
+          <div class="card">
+            <h3>${p.name} ${p.progress>=100?'✅':''}</h3>
+            <div class="progress-section">
+              <div class="progress-label"><span>Progress</span><span>${Math.min(100,p.progress)}%</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,p.progress)}%;background:${p.progress>=100?'var(--green)':'linear-gradient(90deg,var(--accent),var(--accent2))'}"></div></div>
+            </div>
+            ${p.progress>=100?`<p style="color:var(--green);font-size:0.85rem;">Revenue: ${fmt(p.revenue)} CZK</p>`:''}
+          </div>
+        `;
+      });
+    }
+    
+    if(G.clients.length > 0) {
+      html += '<div class="section-title">Klienti</div>';
+      G.clients.slice(-8).forEach(c => {
+        html += `<div class="card" style="padding:12px;"><strong>${c.name}</strong> <span style="color:var(--green);float:right;">${fmt(c.value)} CZK</span></div>`;
+      });
+    }
+  }
+  
+  if(G.investments.length > 0) {
+    html += '<div class="section-title">Investice</div>';
+    let totalInv = G.investments.reduce((s,i)=>s+i.amount,0);
+    let totalRet = G.investments.reduce((s,i)=>s+i.returns,0);
+    html += `<div class="card"><p>Celkem investováno: <strong>${fmt(totalInv)} CZK</strong></p><p>Výnosy: <strong style="color:var(--green);">${fmt(totalRet)} CZK</strong></p></div>`;
+  }
+  
+  document.getElementById('business-content').innerHTML = html;
+}
+
+function renderSkills() {
+  let html = '<div class="skills-grid">';
+  const labels = {sales:'Prodej',coding:'Kódování',leadership:'Leadership',marketing:'Marketing',networking:'Networking',fitness:'Fitness',finance:'Finance',negotiation:'Vyjednávání',design:'Design',speaking:'Prezentace'};
+  Object.entries(G.skills).forEach(([k,v]) => {
+    html += `
+      <div class="skill-item">
+        <div class="skill-name">${labels[k]||k}</div>
+        <div class="skill-level">${v}</div>
+        <div class="skill-bar"><div class="skill-fill" style="width:${v}%"></div></div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  if(G.achievements.length > 0) {
+    html += '<div class="section-title">Achievementy</div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    G.achievements.forEach(id => {
+      let a = ACHIEVEMENTS.find(x=>x.id===id);
+      if(a) html += `<div class="card" style="padding:10px 14px;margin:0;"><strong>${a.name}</strong><br><span style="font-size:0.75rem;color:var(--muted);">${a.desc}</span></div>`;
+    });
+    html += '</div>';
+  }
+  
+  // Show locked achievements
+  let locked = ACHIEVEMENTS.filter(a => !G.achievements.includes(a.id));
+  if(locked.length > 0) {
+    html += '<div class="section-title">Zamčené</div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
+    locked.forEach(a => {
+      html += `<div class="card" style="padding:10px 14px;margin:0;opacity:0.4;"><strong>🔒 ???</strong><br><span style="font-size:0.75rem;color:var(--muted);">${a.desc}</span></div>`;
+    });
+    html += '</div>';
+  }
+  
+  document.getElementById('skills-content').innerHTML = html;
+}
+
+function renderPeople() {
+  let html = '';
+  
+  if(G.mentor) {
+    html += `<div class="section-title">Mentor</div>
+      <div class="employee-card"><div class="employee-avatar">🧠</div>
+      <div class="employee-info"><div class="employee-name">${G.mentor.name}</div><div class="employee-role">Mentor (od týdne ${G.mentor.week})</div></div></div>`;
+  }
+  
+  if(G.partner) {
+    html += `<div class="section-title">Partner</div>
+      <div class="employee-card"><div class="employee-avatar">💜</div>
+      <div class="employee-info"><div class="employee-name">${G.partner.name}</div><div class="employee-role">Od týdne ${G.partner.week}</div></div></div>`;
+  }
+  
+  if(G.employees.length > 0) {
+    html += '<div class="section-title">Zaměstnanci (' + G.employees.length + ')</div>';
+    G.employees.forEach(e => {
+      html += `<div class="employee-card"><div class="employee-avatar">${e.emoji}</div>
+        <div class="employee-info"><div class="employee-name">${e.name}</div><div class="employee-role">${e.role} • ${fmt(e.salary)} CZK/měs • Skill: ${e.skill}</div></div></div>`;
+    });
+  }
+  
+  if(G.contacts.length > 0) {
+    html += '<div class="section-title">Kontakty (' + G.contacts.length + ')</div>';
+    G.contacts.slice(-15).forEach(c => {
+      html += `<div class="card" style="padding:10px 14px;"><strong>${c.name}</strong> <span style="color:var(--muted);font-size:0.8rem;">${c.role}</span></div>`;
+    });
+  }
+  
+  if(!html) html = '<div class="card"><p>Zatím žádní lidé. Choď na networking!</p></div>';
+  document.getElementById('people-content').innerHTML = html;
+}
+
+function renderLog() {
+  let html = '';
+  G.log.forEach(l => {
+    html += `<div class="log-entry ${l.type}"><span class="log-week">T${l.week}</span>${l.text}</div>`;
+  });
+  if(!html) html = '<p style="color:var(--muted);">Zatím prázdný log.</p>';
+  document.getElementById('log-content').innerHTML = html;
+}
+
+</script>
+</body>
+</html>

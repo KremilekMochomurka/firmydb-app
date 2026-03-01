@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMPIRE ZERO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--panel:#12121a;--border:#1a1a2e;--accent:#00f0ff;--accent2:#ff006e;--accent3:#39ff14;--text:#e0e0e0;--dim:#666;--gold:#ffd700}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;overflow-x:hidden;min-height:100vh}
+.glow{text-shadow:0 0 10px var(--accent),0 0 20px var(--accent)}
+.glow2{text-shadow:0 0 10px var(--accent2),0 0 20px var(--accent2)}
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.5s}
+#splash h1{font-size:4em;letter-spacing:0.3em;color:var(--accent);text-shadow:0 0 30px var(--accent),0 0 60px var(--accent);margin-bottom:0.2em}
+#splash .sub{color:var(--accent2);font-size:1.2em;margin-bottom:2em;letter-spacing:0.2em}
+#splash button{background:transparent;border:2px solid var(--accent);color:var(--accent);padding:15px 50px;font-size:1.2em;font-family:inherit;cursor:pointer;letter-spacing:0.2em;transition:all 0.3s}
+#splash button:hover{background:var(--accent);color:var(--bg);box-shadow:0 0 30px var(--accent)}
+#game{display:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--panel)}
+header h1{font-size:1.2em;color:var(--accent);letter-spacing:0.15em}
+#week{color:var(--accent2)}
+.resources{display:flex;gap:20px;flex-wrap:wrap}
+.res{display:flex;align-items:center;gap:5px;font-size:0.85em}
+.res .lbl{color:var(--dim)}
+.res .val{font-weight:bold}
+.res.cash .val{color:var(--accent3)}
+.res.rep .val{color:var(--gold)}
+.res.talent .val{color:var(--accent)}
+.res.tech .val{color:var(--accent2)}
+main{display:grid;grid-template-columns:1fr 1fr;gap:1px;height:calc(100vh - 52px);background:var(--border)}
+.col{background:var(--bg);overflow-y:auto;padding:15px}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:10px}
+.section h3{color:var(--accent);font-size:0.9em;margin-bottom:8px;letter-spacing:0.1em;border-bottom:1px solid var(--border);padding-bottom:5px}
+.btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 14px;font-family:inherit;font-size:0.8em;cursor:pointer;transition:all 0.2s;margin:3px;border-radius:3px}
+.btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px rgba(0,240,255,0.2)}
+.btn:disabled{opacity:0.3;cursor:not-allowed}
+.btn.danger{border-color:var(--accent2)}
+.btn.danger:hover:not(:disabled){color:var(--accent2);box-shadow:0 0 10px rgba(255,0,110,0.2)}
+.btn.success{border-color:var(--accent3)}
+.btn.success:hover:not(:disabled){color:var(--accent3)}
+#log{max-height:300px;overflow-y:auto;font-size:0.8em;line-height:1.6}
+#log .entry{padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+#log .entry.event{color:var(--gold)}
+#log .entry.good{color:var(--accent3)}
+#log .entry.bad{color:var(--accent2)}
+#log .entry.snark{color:var(--accent);font-style:italic}
+.progress-bar{background:var(--border);height:8px;border-radius:4px;overflow:hidden;margin:4px 0}
+.progress-bar .fill{height:100%;transition:width 0.3s;border-radius:4px}
+.stat-row{display:flex;justify-content:space-between;font-size:0.8em;margin:3px 0}
+.stat-row .label{color:var(--dim)}
+.milestone{padding:5px 8px;margin:3px 0;font-size:0.75em;border-left:2px solid var(--border);opacity:0.4}
+.milestone.done{border-color:var(--accent3);opacity:1}
+.product{background:rgba(255,255,255,0.02);padding:8px;margin:5px 0;border-radius:3px;font-size:0.8em}
+.product .name{color:var(--accent);font-weight:bold}
+.market-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:0.8em;border-bottom:1px solid rgba(255,255,255,0.03)}
+#event-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:500}
+#event-modal .modal{background:var(--panel);border:1px solid var(--accent);padding:25px;max-width:500px;width:90%;border-radius:6px}
+#event-modal h2{color:var(--accent);margin-bottom:10px;font-size:1.1em}
+#event-modal p{font-size:0.9em;margin-bottom:15px;line-height:1.5}
+#event-modal .choices{display:flex;gap:10px;flex-wrap:wrap}
+#gameover{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:600;flex-direction:column}
+#gameover h1{font-size:3em;margin-bottom:10px}
+#gameover .score{font-size:1.5em;color:var(--gold);margin-bottom:20px}
+.competitor{font-size:0.8em;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.competitor .cname{color:var(--accent2)}
+.tooltip{position:relative}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+#narrator{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);padding:10px 20px;border-radius:20px;font-size:0.85em;color:var(--accent);font-style:italic;opacity:0;transition:opacity 0.5s;z-index:100;max-width:600px;text-align:center;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="splash">
+<h1 class="glow">EMPIRE ZERO</h1>
+<div class="sub">// od nuly k impériu //</div>
+<button onclick="startGame()">► ZAČÍT HRU</button>
+</div>
+
+<div id="game">
+<header>
+<h1>EMPIRE <span style="color:var(--accent2)">ZERO</span></h1>
+<div id="week">TÝDEN 1</div>
+<div class="resources">
+<div class="res cash"><span class="lbl">💰</span> <span class="val" id="r-cash">50000</span> Kč</div>
+<div class="res rep"><span class="lbl">⭐</span> <span class="val" id="r-rep">0</span></div>
+<div class="res talent"><span class="lbl">👥</span> <span class="val" id="r-talent">1</span></div>
+<div class="res tech"><span class="lbl">⚡</span> <span class="val" id="r-tech">0</span></div>
+</div>
+</header>
+<main>
+<div class="col" id="left-col">
+<div class="section" id="actions-section">
+<h3>▸ AKCE</h3>
+<div id="actions"></div>
+</div>
+<div class="section">
+<h3>▸ PRODUKTY</h3>
+<div id="products">Zatím nic. Čas buildovat.</div>
+</div>
+<div class="section">
+<h3>▸ TRH</h3>
+<div id="market"></div>
+</div>
+</div>
+<div class="col" id="right-col">
+<div class="section">
+<h3>▸ STATUS</h3>
+<div id="stats"></div>
+</div>
+<div class="section">
+<h3>▸ MILNÍKY</h3>
+<div id="milestones"></div>
+</div>
+<div class="section">
+<h3>▸ KONKURENCE</h3>
+<div id="competitors"></div>
+</div>
+<div class="section">
+<h3>▸ LOG</h3>
+<div id="log"></div>
+</div>
+</div>
+</main>
+</div>
+
+<div id="event-modal">
+<div class="modal">
+<h2 id="ev-title"></h2>
+<p id="ev-desc"></p>
+<div class="choices" id="ev-choices"></div>
+</div>
+</div>
+
+<div id="gameover">
+<h1 class="glow" id="go-title">GAME OVER</h1>
+<div class="score" id="go-score"></div>
+<div id="go-stats" style="margin-bottom:20px;font-size:0.9em;text-align:center"></div>
+<button class="btn" onclick="location.reload()" style="font-size:1.1em;padding:12px 30px">ZNOVU</button>
+</div>
+
+<div id="narrator"></div>
+
+<script>
+const S={cash:50000,rep:0,talent:1,tech:0,week:1,products:[],employees:[],mood:70,burnRate:0,phase:'garage',marketing:0,salesForce:0,infra:0,totalRevenue:0,totalSpent:0,decisionsGood:0,decisionsBad:0,eventsHandled:0,speedMode:false,paused:false,investorInterest:0,valuation:50000,funding:0,fundingRound:0,pivots:0,marketCondition:1.0,hype:0};
+
+const PHASES=['garage','startup','scaleup','enterprise','unicorn'];
+const PHASE_NAMES={garage:'GARÁŽ',startup:'STARTUP',scaleup:'SCALE-UP',enterprise:'ENTERPRISE',unicorn:'🦄 UNICORN'};
+const PHASE_THRESHOLDS={startup:500000,scaleup:5000000,enterprise:50000000,unicorn:1000000000};
+
+const SNARKY=[
+"Každý miliardář začínal v garáži. Ty máš aspoň wifi.",
+"Fun fact: 90% startupů zkrachuje. Ale ty jsi přece ENTJ, ne?",
+"Cash flow je king. Ego je jester.",
+"Zaměstnanci chtějí peníze. Shocker.",
+"Valuace je jen číslo. Jako tvůj věk, ale větší.",
+"Pivot není selhání. Pivot je strategie s extra kroky.",
+"Investoři milují růst. A PowerPointy. Hlavně PowerPointy.",
+"Sleep is for the weak. Ale burnout je pro blbce.",
+"Die with Zero? Nejdřív musíš mít co utratit.",
+"Další týden, další šance to neposrat.",
+"Trh je jako Tinder – timing je všechno.",
+"Reputation se buduje roky, ztratí za minutu.",
+"Tvůj produkt je skvělý. Říkáš si. V zrcadle.",
+"Scale-up fáze: kde sny potkávají Excel.",
+"Konkurence spí? Ne, jen mají lepší work-life balance."
+];
+
+const PRODUCT_TYPES=[
+{id:'mvp-app',name:'MVP Appka',cost:30000,techReq:0,devWeeks:4,baseRevenue:5000,category:'app'},
+{id:'saas',name:'SaaS Platforma',cost:150000,techReq:20,devWeeks:12,baseRevenue:30000,category:'saas'},
+{id:'ai-tool',name:'AI Nástroj',cost:300000,techReq:50,devWeeks:16,baseRevenue:80000,category:'ai'},
+{id:'marketplace',name:'Marketplace',cost:500000,techReq:30,devWeeks:20,baseRevenue:120000,category:'marketplace'},
+{id:'enterprise-sol',name:'Enterprise Řešení',cost:2000000,techReq:80,devWeeks:30,baseRevenue:500000,category:'enterprise'},
+{id:'ai-platform',name:'AI Platforma',cost:10000000,techReq:150,devWeeks:40,baseRevenue:3000000,category:'ai-platform'},
+];
+
+const HIRE_TYPES=[
+{id:'dev',name:'Developer',cost:15000,techBoost:3,label:'💻'},
+{id:'marketer',name:'Marketér',cost:12000,repBoost:2,label:'📢'},
+{id:'sales',name:'Sales',cost:14000,salesBoost:1,label:'🤝'},
+{id:'cto',name:'CTO',cost:40000,techBoost:10,label:'🧠'},
+{id:'cfo',name:'CFO',cost:35000,cashBoost:true,label:'📊'},
+];
+
+const MILESTONES=[
+{id:'first-product',name:'První produkt',desc:'Spusť svůj první produkt',check:()=>S.products.some(p=>p.launched)},
+{id:'100k',name:'100K revenue',desc:'Celkový příjem 100 000 Kč',check:()=>S.totalRevenue>=100000},
+{id:'1m',name:'Milionář',desc:'Cash přes 1 000 000 Kč',check:()=>S.cash>=1000000},
+{id:'team5',name:'Tým 5',desc:'Najmi 5 lidí',check:()=>S.employees.length>=5},
+{id:'funding',name:'První investice',desc:'Získej funding',check:()=>S.funding>0},
+{id:'10m-val',name:'10M valuace',desc:'Valuace přes 10M Kč',check:()=>S.valuation>=10000000},
+{id:'scaleup',name:'Scale-up',desc:'Dostaň se do scale-up fáze',check:()=>PHASES.indexOf(S.phase)>=2},
+{id:'100m-val',name:'100M valuace',desc:'Valuace přes 100M',check:()=>S.valuation>=100000000},
+{id:'unicorn',name:'🦄 Unicorn',desc:'Valuace přes 1 miliardu',check:()=>S.valuation>=1000000000},
+{id:'50m-rev',name:'50M total revenue',desc:'Celkový příjem 50M',check:()=>S.totalRevenue>=50000000},
+];
+
+let completedMilestones=new Set();
+let competitors=[
+{name:'TechBros s.r.o.',val:100000,growth:1.05,aggro:0.3},
+{name:'AIFactory',val:200000,growth:1.07,aggro:0.5},
+{name:'DataDream',val:80000,growth:1.04,aggro:0.2},
+];
+
+let tickInterval;
+let narratorTimeout;
+
+function fmt(n){
+if(n>=1e9)return (n/1e9).toFixed(1)+'B';
+if(n>=1e6)return (n/1e6).toFixed(1)+'M';
+if(n>=1e3)return (n/1e3).toFixed(1)+'K';
+return Math.floor(n).toString();
+}
+
+function startGame(){
+document.getElementById('splash').style.opacity='0';
+setTimeout(()=>{
+document.getElementById('splash').style.display='none';
+document.getElementById('game').style.display='block';
+render();
+tickInterval=setInterval(tick,2000);
+narrate(SNARKY[0]);
+},500);
+}
+
+function narrate(text){
+const el=document.getElementById('narrator');
+el.textContent='"'+text+'"';
+el.style.opacity='1';
+clearTimeout(narratorTimeout);
+narratorTimeout=setTimeout(()=>el.style.opacity='0',4000);
+}
+
+function log(text,type=''){
+const el=document.getElementById('log');
+const d=document.createElement('div');
+d.className='entry '+(type||'');
+d.textContent='[T'+S.week+'] '+text;
+el.prepend(d);
+if(el.children.length>100)el.removeChild(el.lastChild);
+}
+
+function tick(){
+if(S.paused)return;
+S.week++;
+
+// Employee costs
+let weeklyCost=0;
+S.employees.forEach(e=>{weeklyCost+=e.cost});
+S.burnRate=weeklyCost;
+S.cash-=weeklyCost;
+S.totalSpent+=weeklyCost;
+
+// Tech growth from devs
+let techGrowth=0;
+S.employees.forEach(e=>{if(e.techBoost)techGrowth+=e.techBoost});
+S.tech+=techGrowth;
+
+// Rep growth from marketers
+let repGrowth=0;
+S.employees.forEach(e=>{if(e.repBoost)repGrowth+=e.repBoost});
+S.rep+=repGrowth+Math.floor(S.hype/10);
+S.hype=Math.max(0,S.hype-1);
+
+// Product development & revenue
+let weekRevenue=0;
+S.products.forEach(p=>{
+if(!p.launched){
+p.progress++;
+if(p.progress>=p.devWeeks){
+p.launched=true;
+p.launchWeek=S.week;
+log(p.name+' SPUŠTĚN! 🚀','good');
+narrate('Produkt na trhu. Teď začíná ta těžká část.');
+S.hype+=20;
+}
+}else{
+let rev=p.baseRevenue*S.marketCondition*(1+S.rep/100)*(1+S.marketing/10)*(1+S.salesForce/5);
+rev*=(1+Math.random()*0.3-0.15);
+let age=S.week-p.launchWeek;
+if(age>50)rev*=Math.max(0.3,1-((age-50)*0.01));
+weekRevenue+=rev;
+p.totalRevenue=(p.totalRevenue||0)+rev;
+}
+});
+S.cash+=weekRevenue;
+S.totalRevenue+=weekRevenue;
+
+// Valuation
+S.valuation=Math.max(S.cash,S.totalRevenue*3+S.rep*1000+S.tech*5000+S.funding);
+S.investorInterest=Math.min(100,Math.floor(S.valuation/100000)+S.rep/2);
+
+// Competitors grow
+competitors.forEach(c=>{
+c.val*=c.growth*(0.95+Math.random()*0.1);
+if(Math.random()<c.aggro*0.05&&S.products.some(p=>p.launched)){
+let steal=Math.floor(weekRevenue*0.05*c.aggro);
+if(steal>0){
+weekRevenue-=steal;
+S.cash-=steal;
+}
+}
+});
+
+// Phase check
+for(let i=PHASES.length-1;i>0;i--){
+if(S.valuation>=PHASE_THRESHOLDS[PHASES[i]]&&PHASES.indexOf(S.phase)<i){
+S.phase=PHASES[i];
+log('FÁZE: '+PHASE_NAMES[S.phase]+'!','good');
+narrate('Level up. '+PHASE_NAMES[S.phase]+' mód aktivován.');
+}
+}
+
+// Market condition fluctuation
+S.marketCondition+=((Math.random()-0.5)*0.1);
+S.marketCondition=Math.max(0.3,Math.min(1.5,S.marketCondition));
+
+// Random events
+if(S.week>3&&Math.random()<0.12)triggerEvent();
+
+// Random snark
+if(S.week%10===0)narrate(SNARKY[Math.floor(Math.random()*SNARKY.length)]);
+
+// Milestone check
+MILESTONES.forEach(m=>{
+if(!completedMilestones.has(m.id)&&m.check()){
+completedMilestones.add(m.id);
+log('🏆 MILNÍK: '+m.name,'good');
+S.rep+=10;
+}
+});
+
+// Bankruptcy
+if(S.cash<-100000){
+gameOver(false);
+return;
+}
+
+// Win condition
+if(S.valuation>=1000000000){
+gameOver(true);
+return;
+}
+
+render();
+}
+
+const EVENTS=[
+{title:'🔥 Virální moment',desc:'Tvůj tweet explodoval. 50K views za noc. Sociální sítě šílí.',
+choices:[
+{text:'Využít hype (marketing push -30K)',action:()=>{S.cash-=30000;S.rep+=30;S.hype+=40;log('Investoval jsi do hype vlny.','good');S.decisionsGood++}},
+{text:'Ignorovat, focus na produkt',action:()=>{S.tech+=5;log('Hype pominul, ale kód je solidní.','');S.decisionsGood++}}
+]},
+{title:'💀 Server crash',desc:'Produkce spadla. Zákazníci zuří. Twitter hoří (tentokrát proti tobě).',
+choices:[
+{text:'Emergency fix (přesčas, -20K)',action:()=>{S.cash-=20000;S.rep-=5;log('Opraveno. Nějaká reputace ztracena.','bad');S.decisionsBad++}},
+{text:'Transparentní postmortem',action:()=>{S.rep+=5;S.tech+=3;log('Komunita ocenila transparentnost.','good');S.decisionsGood++}}
+]},
+{title:'🤝 Nabídka investora',desc:'Angel investor nabízí '+fmt(Math.max(500000,S.valuation*0.3))+' Kč za 15% equity.',
+choices:[
+{text:'Přijmout',action:()=>{let a=Math.max(500000,Math.floor(S.valuation*0.3));S.cash+=a;S.funding+=a;S.fundingRound++;log('Funding: +'+fmt(a)+' Kč!','good');S.investorInterest+=20;S.decisionsGood++}},
+{text:'Odmítnout – bootstrap forever',action:()=>{S.rep+=5;log('Odmítl jsi investora. Respect.','');S.decisionsGood++}},
+{text:'Vyjednávat na 10%',action:()=>{if(Math.random()>0.4){let a=Math.max(500000,Math.floor(S.valuation*0.3));S.cash+=a;S.funding+=a;S.fundingRound++;log('Vyjednal jsi lepší deal!','good');S.rep+=3;S.decisionsGood++}else{log('Investor odešel. Příliš drzé.','bad');S.decisionsBad++}}}
+]},
+{title:'🏴‍☠️ Konkurence krade lidi',desc:competitors[Math.floor(Math.random()*competitors.length)].name+' nabízí tvým lidem double plat.',
+choices:[
+{text:'Přidej jim 20% (+platy)',action:()=>{S.employees.forEach(e=>e.cost=Math.floor(e.cost*1.2));log('Platy zvýšeny. Tým drží.','');S.decisionsGood++}},
+{text:'Nech je jít (ztratíš 1)',action:()=>{if(S.employees.length>0){S.employees.pop();S.talent--;log('Ztratil jsi člena týmu.','bad');S.decisionsBad++}else{log('Nikdo neodešel – nemáš nikoho.','snark')}}},
+{text:'Nabídni equity',action:()=>{S.rep+=3;log('Tým ocení equity. Motivace +.','good');S.decisionsGood++}}
+]},
+{title:'📰 PR skandál',desc:'Někdo na Twitteru tvrdí, že tvůj produkt je scam. Vlna negativity.',
+choices:[
+{text:'Právníci (-50K)',action:()=>{S.cash-=50000;S.rep-=2;log('Právníci nasazeni. Nákladné.','bad');S.decisionsBad++}},
+{text:'Facts & receipts (transparentní odpověď)',action:()=>{S.rep+=10;log('Komunita si tě za pravdu oblíbila.','good');S.decisionsGood++}},
+{text:'Ignorovat',action:()=>{S.rep-=15;log('Ticho = souhlas? Rep damage.','bad');S.decisionsBad++}}
+]},
+{title:'🌊 Market crash',desc:'Trh padá. Investoři se schovávají. Revenue klesá.',
+choices:[
+{text:'Škrtej náklady',action:()=>{if(S.employees.length>0){S.employees.pop();S.talent--}S.marketCondition=Math.max(0.3,S.marketCondition-0.2);log('Přežití mode. Costs cut.','bad');S.decisionsGood++}},
+{text:'Double down – nakupuj levně',action:()=>{S.cash-=100000;S.tech+=15;S.marketCondition=Math.max(0.3,S.marketCondition-0.1);log('Riskantní, ale strategické.','');if(Math.random()>0.5){S.decisionsGood++}else{S.decisionsBad++}}}
+]},
+{title:'💡 Pivotní moment',desc:'Data ukazují, že uživatelé používají tvůj produkt úplně jinak, než jsi čekal.',
+choices:[
+{text:'Pivotni na nový use-case',action:()=>{S.pivots++;S.tech+=10;S.rep+=5;S.products.forEach(p=>{if(p.launched)p.baseRevenue=Math.floor(p.baseRevenue*1.5)});log('Pivot úspěšný! Revenue boost.','good');S.decisionsGood++}},
+{text:'Drž se vize',action:()=>{S.rep+=3;log('Vize drží. Bude to trvat déle.','');S.decisionsGood++}}
+]},
+{title:'🎯 Akvizice nabídka',desc:'Velká firma nabízí '+fmt(S.valuation*2)+' Kč za celou firmu.',
+choices:[
+{text:'Prodej (hra končí)',action:()=>{S.cash+=S.valuation*2;gameOver(true,'sold')}},
+{text:'Odmítni – to nejlepší teprve přijde',action:()=>{S.rep+=20;S.investorInterest+=10;log('Odmítl jsi buyout. Legenda.','good');narrate('Balls of steel. Nebo bláznovství. Uvidíme.');S.decisionsGood++}}
+]},
+{title:'🧑‍💻 Hackathon talent',desc:'Na hackathonu jsi potkal geniálního vývojáře. Chce se přidat.',
+choices:[
+{text:'Najmi ho (zdarma první měsíc)',action:()=>{S.employees.push({...HIRE_TYPES[0],cost:0,freeUntil:S.week+4});S.talent++;log('Nový talent v týmu!','good');S.decisionsGood++}},
+{text:'Nabídni mu equity deal',action:()=>{S.tech+=8;S.employees.push({...HIRE_TYPES[0]});S.talent++;log('Equity deal. Motivated dev.','good');S.decisionsGood++}}
+]},
+{title:'🎰 Crypto hype',desc:'Zákazníci chtějí platit v kryptu. Přidáš podporu?',
+choices:[
+{text:'Jasně, je to budoucnost (-80K dev)',action:()=>{S.cash-=80000;S.hype+=30;S.rep+=10;log('Crypto payments live. Hype!','good');S.decisionsGood++}},
+{text:'Ne, focus na core',action:()=>{S.tech+=5;log('Žádný crypto. Back to basics.','');S.decisionsGood++}},
+{text:'Jen marketing, ne implementace',action:()=>{S.hype+=15;S.rep-=5;log('Prázdné sliby? Riskantní.','bad');S.decisionsBad++}}
+]},
+];
+
+function triggerEvent(){
+let ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+S.paused=true;
+S.eventsHandled++;
+document.getElementById('ev-title').textContent=ev.title;
+document.getElementById('ev-desc').textContent=ev.desc;
+const ch=document.getElementById('ev-choices');
+ch.innerHTML='';
+ev.choices.forEach(c=>{
+const b=document.createElement('button');
+b.className='btn';
+b.textContent=c.text;
+b.onclick=()=>{
+c.action();
+document.getElementById('event-modal').style.display='none';
+S.paused=false;
+render();
+};
+ch.appendChild(b);
+});
+document.getElementById('event-modal').style.display='flex';
+}
+
+function gameOver(won,reason){
+clearInterval(tickInterval);
+const el=document.getElementById('gameover');
+el.style.display='flex';
+if(won){
+document.getElementById('go-title').textContent=reason==='sold'?'EXIT!':'🦄 UNICORN!';
+document.getElementById('go-title').className='glow';
+}else{
+document.getElementById('go-title').textContent='BANKROT';
+document.getElementById('go-title').className='glow2';
+}
+document.getElementById('go-score').textContent='Valuace: '+fmt(S.valuation)+' Kč | Týden: '+S.week;
+document.getElementById('go-stats').innerHTML=`
+Revenue: ${fmt(S.totalRevenue)} Kč<br>
+Produkty: ${S.products.length}<br>
+Tým: ${S.employees.length}<br>
+Funding: ${fmt(S.funding)} Kč<br>
+Pivoty: ${S.pivots}<br>
+Fáze: ${PHASE_NAMES[S.phase]}<br>
+Milníky: ${completedMilestones.size}/${MILESTONES.length}<br>
+Events: ${S.eventsHandled}
+`;
+// Save best score
+let best=localStorage.getItem('ez-best');
+if(!best||S.valuation>parseInt(best)){
+localStorage.setItem('ez-best',S.valuation.toString());
+localStorage.setItem('ez-best-week',S.week.toString());
+}
+}
+
+function render(){
+document.getElementById('week').textContent='TÝDEN '+S.week+' | '+PHASE_NAMES[S.phase];
+document.getElementById('r-cash').textContent=fmt(S.cash);
+document.getElementById('r-rep').textContent=fmt(S.rep);
+document.getElementById('r-talent').textContent=S.talent;
+document.getElementById('r-tech').textContent=fmt(S.tech);
+
+// Actions
+let actHtml='<div style="margin-bottom:8px;font-size:0.75em;color:var(--dim)">VÝVOJ</div>';
+PRODUCT_TYPES.forEach(p=>{
+let can=S.cash>=p.cost&&S.tech>=p.techReq;
+actHtml+=`<button class="btn success" ${can?'':'disabled'} onclick="buildProduct('${p.id}')">${p.name} (${fmt(p.cost)} Kč, ⚡${p.techReq})</button>`;
+});
+actHtml+='<div style="margin:10px 0 8px;font-size:0.75em;color:var(--dim)">HIRING</div>';
+HIRE_TYPES.forEach(h=>{
+let can=S.cash>=h.cost*4;
+actHtml+=`<button class="btn" ${can?'':'disabled'} onclick="hire('${h.id}')">${h.label} ${h.name} (${fmt(h.cost)}/t)</button>`;
+});
+actHtml+='<div style="margin:10px 0 8px;font-size:0.75em;color:var(--dim)">INVESTICE</div>';
+actHtml+=`<button class="btn" ${S.cash>=20000?'':'disabled'} onclick="invest('marketing')">📢 Marketing (-20K)</button>`;
+actHtml+=`<button class="btn" ${S.cash>=30000?'':'disabled'} onclick="invest('sales')">🤝 Sales team (-30K)</button>`;
+actHtml+=`<button class="btn" ${S.cash>=50000?'':'disabled'} onclick="invest('infra')">🏗️ Infrastruktura (-50K)</button>`;
+actHtml+=`<button class="btn" ${S.cash>=100000?'':'disabled'} onclick="invest('rd')">🔬 R&D Push (-100K)</button>`;
+let best=localStorage.getItem('ez-best');
+if(best)actHtml+=`<div style="margin-top:10px;font-size:0.7em;color:var(--gold)">🏆 Best: ${fmt(parseInt(best))} Kč (T${localStorage.getItem('ez-best-week')})</div>`;
+document.getElementById('actions').innerHTML=actHtml;
+
+// Products
+let prodHtml='';
+S.products.forEach(p=>{
+if(!p.launched){
+let pct=Math.floor((p.progress/p.devWeeks)*100);
+prodHtml+=`<div class="product"><span class="name">${p.name}</span> [VE VÝVOJI]<div class="progress-bar"><div class="fill" style="width:${pct}%;background:var(--accent)"></div></div><span style="font-size:0.7em">${pct}% (${p.devWeeks-p.progress} týdnů)</span></div>`;
+}else{
+prodHtml+=`<div class="product"><span class="name">${p.name}</span> ✅ LIVE<br><span style="color:var(--accent3)">Revenue: ${fmt(p.totalRevenue||0)} Kč</span></div>`;
+}
+});
+document.getElementById('products').innerHTML=prodHtml||'Zatím nic. Čas buildovat.';
+
+// Stats
+let statsHtml='';
+statsHtml+=`<div class="stat-row"><span class="label">Valuace</span><span style="color:var(--gold)">${fmt(S.valuation)} Kč</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Burn rate</span><span style="color:var(--accent2)">${fmt(S.burnRate)}/týden</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Market</span><span>${(S.marketCondition*100).toFixed(0)}%</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Investor zájem</span><span>${Math.floor(S.investorInterest)}%</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Hype</span><span style="color:var(--accent)">${S.hype}</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Celkový revenue</span><span style="color:var(--accent3)">${fmt(S.totalRevenue)} Kč</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Funding</span><span>${fmt(S.funding)} Kč (round ${S.fundingRound})</span></div>`;
+statsHtml+=`<div class="stat-row"><span class="label">Tým</span><span>${S.employees.map(e=>e.label||'👤').join('')||'Solo founder'}</span></div>`;
+document.getElementById('stats').innerHTML=statsHtml;
+
+// Milestones
+let milHtml='';
+MILESTONES.forEach(m=>{
+let done=completedMilestones.has(m.id);
+milHtml+=`<div class="milestone ${done?'done':''}">${done?'✅':'⬜'} ${m.name} <span style="color:var(--dim)">– ${m.desc}</span></div>`;
+});
+document.getElementById('milestones').innerHTML=milHtml;
+
+// Competitors
+let compHtml='';
+competitors.forEach(c=>{
+compHtml+=`<div class="competitor"><span class="cname">${c.name}</span> – ${fmt(c.val)} Kč</div>`;
+});
+document.getElementById('competitors').innerHTML=compHtml;
+
+// Market
+let mktHtml=`<div class="market-item"><span>Kondice trhu</span><span style="color:${S.marketCondition>1?'var(--accent3)':'var(--accent2)'}">${S.marketCondition>1?'📈 Bull':'📉 Bear'} ${(S.marketCondition*100).toFixed(0)}%</span></div>`;
+mktHtml+=`<div class="market-item"><span>Marketing level</span><span>${S.marketing}</span></div>`;
+mktHtml+=`<div class="market-item"><span>Sales force</span><span>${S.salesForce}</span></div>`;
+mktHtml+=`<div class="market-item"><span>Infrastruktura</span><span>${S.infra}</span></div>`;
+document.getElementById('market').innerHTML=mktHtml;
+}
+
+window.buildProduct=function(id){
+let pt=PRODUCT_TYPES.find(p=>p.id===id);
+if(!pt||S.cash<pt.cost||S.tech<pt.techReq)return;
+S.cash-=pt.cost;S.totalSpent+=pt.cost;
+S.products.push({...pt,progress:0,launched:false,totalRevenue:0});
+log('Začal jsi vývoj: '+pt.name,'good');
+render();
+};
+
+window.hire=function(id){
+let ht=HIRE_TYPES.find(h=>h.id===id);
+if(!ht||S.cash<ht.cost*4)return;
+S.employees.push({...ht});
+S.talent++;
+log('Najal jsi: '+ht.name,'good');
+render();
+};
+
+window.invest=function(type){
+switch(type){
+case'marketing':if(S.cash<20000)return;S.cash-=20000;S.marketing++;S.hype+=10;log('Marketing boost!','good');break;
+case'sales':if(S.cash<30000)return;S.cash-=30000;S.salesForce++;log('Sales team posílen.','good');break;
+case'infra':if(S.cash<50000)return;S.cash-=50000;S.infra++;S.tech+=5;log('Infrastruktura vylepšena.','good');break;
+case'rd':if(S.cash<100000)return;S.cash-=100000;S.tech+=20;log('R&D push! Tech +20','good');break;
+}
+render();
+};
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+if(e.key===' '){S.speedMode=!S.speedMode;clearInterval(tickInterval);tickInterval=setInterval(tick,S.speedMode?500:2000);narrate(S.speedMode?'Turbo mode. Yolo.':'Normální tempo.');}
+});
+</script>
+</body>
+</html>

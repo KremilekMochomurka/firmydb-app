@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENTJ: The Game</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #e0e0e0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+#game { display: flex; flex-direction: column; height: 100vh; padding: 16px; gap: 12px; }
+
+.top-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #111; border: 1px solid #222; border-radius: 8px; }
+.stat { text-align: center; }
+.stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+.stat-value { font-size: 20px; font-weight: bold; color: #00ff88; }
+.stat-value.money { color: #ffd700; }
+.stat-value.respect { color: #ff6b6b; }
+.stat-value.iq { color: #6bc5ff; }
+
+.main-area { flex: 1; display: flex; gap: 12px; min-height: 0; }
+
+.scene { flex: 2; background: #111; border: 1px solid #222; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+.scene-title { font-size: 14px; color: #ff6b6b; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px; }
+.scene-text { flex: 1; overflow-y: auto; font-size: 14px; line-height: 1.7; color: #ccc; margin-bottom: 12px; }
+.scene-text p { margin-bottom: 10px; }
+.scene-text .sarcasm { color: #888; font-style: italic; }
+.scene-text .highlight { color: #ffd700; }
+.scene-text .gain { color: #00ff88; }
+.scene-text .loss { color: #ff4444; }
+
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice-btn { background: #1a1a2e; border: 1px solid #333; color: #e0e0e0; padding: 12px 16px; border-radius: 6px; cursor: pointer; text-align: left; font-family: inherit; font-size: 13px; transition: all 0.2s; }
+.choice-btn:hover { background: #16213e; border-color: #00ff88; color: #fff; }
+.choice-btn .choice-key { color: #00ff88; margin-right: 8px; }
+
+.sidebar { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 240px; }
+.panel { background: #111; border: 1px solid #222; border-radius: 8px; padding: 14px; }
+.panel-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+.log { flex: 1; overflow-y: auto; min-height: 0; }
+.log-entry { font-size: 11px; color: #555; padding: 2px 0; border-bottom: 1px solid #1a1a1a; }
+.log-entry:last-child { border: none; }
+.log-entry .time { color: #333; }
+
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.skill { text-align: center; padding: 6px; background: #0a0a15; border-radius: 4px; }
+.skill-name { font-size: 9px; color: #666; text-transform: uppercase; }
+.skill-bar { height: 4px; background: #222; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.skill-fill.sales { background: #ff6b6b; }
+.skill-fill.tech { background: #6bc5ff; }
+.skill-fill.charm { background: #ff88cc; }
+.skill-fill.hustle { background: #ffd700; }
+.skill-fill.fitness { background: #00ff88; }
+.skill-fill.wisdom { background: #c49bff; }
+
+.achievement { display: inline-block; background: #1a1520; border: 1px solid #333; border-radius: 4px; padding: 2px 8px; margin: 2px; font-size: 10px; color: #c49bff; }
+
+#intro-screen { position: fixed; inset: 0; background: #0a0a0f; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+#intro-screen h1 { font-size: 48px; color: #ff6b6b; margin-bottom: 8px; }
+#intro-screen .sub { color: #666; font-size: 14px; margin-bottom: 40px; }
+#intro-screen .tagline { color: #888; font-size: 12px; margin-bottom: 30px; font-style: italic; }
+#start-btn { background: none; border: 2px solid #00ff88; color: #00ff88; padding: 14px 40px; font-family: inherit; font-size: 16px; cursor: pointer; border-radius: 4px; transition: all 0.3s; }
+#start-btn:hover { background: #00ff88; color: #0a0a0f; }
+.valentine { color: #ff4488; font-size: 11px; margin-top: 20px; }
+
+.scene-text::-webkit-scrollbar, .log::-webkit-scrollbar { width: 4px; }
+.scene-text::-webkit-scrollbar-thumb, .log::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="intro-screen">
+  <h1>ENTJ: THE GAME</h1>
+  <div class="sub">Simulátor života, kde průměrnost není opce</div>
+  <div class="tagline">"Ostatní sní. Ty exekutuješ."</div>
+  <button id="start-btn" onclick="startGame()">▶ SPUSTIT SIMULACI</button>
+  <div class="valentine">💀 Valentine's Day Edition — protože single life je taky strategie 💀</div>
+</div>
+
+<div id="game" style="display:none">
+  <div class="top-bar">
+    <div class="stat"><div class="stat-label">Věk</div><div class="stat-value" id="age">20</div></div>
+    <div class="stat"><div class="stat-label">Net Worth (CZK)</div><div class="stat-value money" id="money">1,000,000</div></div>
+    <div class="stat"><div class="stat-label">Respekt</div><div class="stat-value respect" id="respect">50</div></div>
+    <div class="stat"><div class="stat-label">IQ Moves</div><div class="stat-value iq" id="iq">0</div></div>
+    <div class="stat"><div class="stat-label">Měsíc</div><div class="stat-value" id="month">Únor 2026</div></div>
+  </div>
+  
+  <div class="main-area">
+    <div class="scene">
+      <div class="scene-title" id="scene-title">—</div>
+      <div class="scene-text" id="scene-text"></div>
+      <div class="choices" id="choices"></div>
+    </div>
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">🎯 Skills</div>
+        <div class="skills-grid">
+          <div class="skill"><div class="skill-name">Sales</div><div class="skill-bar"><div class="skill-fill sales" id="skill-sales" style="width:40%"></div></div></div>
+          <div class="skill"><div class="skill-name">Tech</div><div class="skill-bar"><div class="skill-fill tech" id="skill-tech" style="width:55%"></div></div></div>
+          <div class="skill"><div class="skill-name">Charm</div><div class="skill-bar"><div class="skill-fill charm" id="skill-charm" style="width:30%"></div></div></div>
+          <div class="skill"><div class="skill-name">Hustle</div><div class="skill-bar"><div class="skill-fill hustle" id="skill-hustle" style="width:60%"></div></div></div>
+          <div class="skill"><div class="skill-name">Fitness</div><div class="skill-bar"><div class="skill-fill fitness" id="skill-fitness" style="width:70%"></div></div></div>
+          <div class="skill"><div class="skill-name">Wisdom</div><div class="skill-bar"><div class="skill-fill wisdom" id="skill-wisdom" style="width:35%"></div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🏆 Achievementy</div>
+        <div id="achievements"><span style="color:#444;font-size:11px">Zatím nic. Grinduj.</span></div>
+      </div>
+      <div class="panel log" style="flex:1">
+        <div class="panel-title">📜 Log</div>
+        <div id="log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = {
+  money: 1000000, respect: 50, iq: 0, age: 20, month: 1,
+  sales: 40, tech: 55, charm: 30, hustle: 60, fitness: 70, wisdom: 35,
+  achievements: [], log: [], scene: 0, flags: {}
+};
+
+const months = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+const scenes = [
+  // 0 - Intro
+  {
+    title: "Valentýn 2026",
+    text: `<p>Je 14. února. Svět kolem tebe je růžový a plný cringe.</p>
+<p>Tvůj telefon vibruje. Instagram story: kamarádi postují fotky se svými holkami. Restaurace. Květiny. Srdíčka.</p>
+<p class="sarcasm">Ty sedíš doma s net worth milion korun a sarkasmem, který by přežil nukleární zimu.</p>
+<p>Co uděláš s tímhle <span class="highlight">strategicky významným</span> dnem?</p>`,
+    choices: [
+      { text: "Ignorovat Valentýn, otevřít laptop, grindovat", next: 1, money: 5000, hustle: 3, log: "Valentýn? To je jen marketingový konstrukt." },
+      { text: "Jít do gymu — železo tě nikdy neopustí", next: 2, fitness: 5, respect: 3, log: "Leg day místo date night." },
+      { text: "Otevřít Tinder — čas na strategický dating", next: 3, charm: 2, log: "Operace 'Najdi někoho kdo stojí za čas' zahájena." },
+      { text: "Zavolat kamošům — anti-valentýnský večer", next: 4, wisdom: 3, respect: 2, log: "Bros before... no, prostě bros." }
+    ]
+  },
+  // 1 - Grind
+  {
+    title: "Pozdní noc v Apertii",
+    text: `<p>Laptop svítí ve tmě. Spotify hraje lo-fi. Kafe číslo tři.</p>
+<p>Přišel ti email od potenciálního klienta — německá firma, AI integrace, <span class="highlight">budget 2M CZK</span>.</p>
+<p>Ale taky ti píše kolega, jestli nechceš jít na firemní Valentýnský event. Networking + volný bar.</p>
+<p class="sarcasm">Rozhodnutí, rozhodnutí...</p>`,
+    choices: [
+      { text: "Připravit killer pitch pro německou firmu — tohle je priorita", next: 5, money: 50000, sales: 5, hustle: 3, iq: 1, log: "Pitch pro DE klienta hotový ve 2 AM.", achievement: "🇩🇪 German Precision" },
+      { text: "Jít na event — networking je taky práce", next: 6, charm: 4, sales: 2, respect: 2, log: "Networking event. Vizitky rozdány." },
+      { text: "Oboje — pitch teď, event potom", next: 7, money: 30000, sales: 3, charm: 2, hustle: 5, fitness: -2, log: "Sleep is for the weak. Literally.", achievement: "⚡ No Sleep Till Berlin" }
+    ]
+  },
+  // 2 - Gym
+  {
+    title: "Temple of Iron",
+    text: `<p>Gym je poloprázdný. Všichni normální lidi jsou na rande.</p>
+<p>Ty jsi právě dal PR na benchpressu. 100 kg. <span class="gain">Životní rekord.</span></p>
+<p>U vedlejší lavičky se na tebe dívá holka, která taky cvičí sama na Valentýna. Má AirPods, deadliftuje víc než většina chlapů tady.</p>
+<p class="sarcasm">Plot twist: existují lidi jako ty.</p>`,
+    choices: [
+      { text: "Dokončit trénink, skinout headphones — gym je svatyně, ne Tinder", next: 8, fitness: 5, wisdom: 2, respect: 3, log: "Focus. Discipline. 100kg bench PR." },
+      { text: "Mezi sety ji oslovit — 'Solidní forma na ten deadlift'", next: 9, charm: 5, fitness: 3, log: "Oslovil holku v gymu. Na Valentýna. Bold move." },
+      { text: "Udělat si selfie s PR, story na Instagram — flex legitimní", next: 10, respect: -2, charm: 1, log: "Gym selfie posted. Trochu cringe, trochu flex." }
+    ]
+  },
+  // 3 - Tinder
+  {
+    title: "Digitální džungle",
+    text: `<p>Tinder v den Valentýna. <span class="sarcasm">Jako jít nakupovat na Black Friday — chaos, zoufalství, a občas slušná dealka.</span></p>
+<p>Tři profily ti padly do oka:</p>
+<p><span class="highlight">Anna, 21</span> — INTJ, studuje data science, bio: "Pokud mi nenapíšeš něco originálního, swipe left na tvůj effort."</p>
+<p><span class="highlight">Tereza, 22</span> — fotky z Bali, "living my best life ✨", 47 společných přátel.</p>
+<p><span class="highlight">Klára, 20</span> — bio prázdný, ale 6 fotek s knížkami a jeden meme o stoicismu.</p>`,
+    choices: [
+      { text: "Anna — INTJ vs ENTJ? Challenge accepted.", next: 11, charm: 3, iq: 1, log: "Match s Annou. Intelektuální sparring zahájen." },
+      { text: "Klára — kdo má meme o stoicismu, stojí za zprávu", next: 12, wisdom: 3, charm: 2, log: "Match s Klárou. Vibes over looks." },
+      { text: "Zavřít Tinder — nebudu desperate swipovat na Valentýna", next: 13, respect: 5, wisdom: 3, log: "Tinder zavřen. Sebeúcta > dopamin." , achievement: "🧠 Above The Algorithm"}
+    ]
+  },
+  // 4 - Bros
+  {
+    title: "Operace Anti-Valentýn",
+    text: `<p>Zavolals klukům. Za hodinu jste v hospodě.</p>
+<p>Martin přinesl whisky. Honza nadává na svoji ex. Petr filozofuje o tom, jestli je láska jen biochemická závislost.</p>
+<p class="sarcasm">"Oxytocin je droga a vztahy jsou just legální addiction," říká Petr, čtvrtý rok ve vztahu.</p>
+<p>Barman vám dá rundu zdarma, protože <span class="highlight">"je smutný se dívat na čtyři single chlapy na Valentýna."</span></p>
+<p>Vlastně to je docela dobrý večer.</p>`,
+    choices: [
+      { text: "Přesvědčit kluky na společný side-project — proč ne teď?", next: 14, hustle: 4, sales: 2, iq: 1, log: "Hospodský brainstorm → possible startup idea.", achievement: "🍺 Pub Startup" },
+      { text: "Užít si večer, žádný hustle — i ENTJ potřebuje pauzu", next: 15, wisdom: 5, respect: 2, fitness: -1, log: "Večer s klukama. Žádný agenda. Rare." },
+      { text: "Zorganizovat poker night — aspoň strategická hra", next: 16, iq: 2, charm: 2, log: "Poker night. Vyhrál 2000 CZK od Honzy." }
+    ]
+  },
+  // 5 - Pitch result
+  {
+    title: "3:47 AM — Sent.",
+    text: `<p>Pitch je hotový. 15 slidů. Čistý, ostrý, bezchybný.</p>
+<p>ROI projekce. Use cases. Competitive analysis. <span class="gain">Tohle je tvoje nejlepší práce.</span></p>
+<p>Podíváš se z okna. Město spí. Většina lidí dnes řešila, kam jít na večeři.</p>
+<p>Ty jsi právě poslal nabídku, která ti může přinést <span class="highlight">provizi 200k CZK</span>.</p>
+<p class="sarcasm">Valentýn? Nah. Tohle je láska k procesu.</p>
+<p>Telefon blikne — zpráva od mámy: "Nezapomněl jsi na někoho? 💕"</p>`,
+    choices: [
+      { text: "Odpovědět mámě — 'Mám se rád, to se počítá?' + jít spát", next: 17, wisdom: 3, respect: 2, log: "Odpověď mámě: sebeláska je taky láska." },
+      { text: "Rovnou začít na follow-up strategii — momentum!", next: 18, hustle: 5, sales: 3, fitness: -3, money: 20000, log: "4 AM follow-up strategie. Kdo potřebuje spánek?", achievement: "🌅 Dawn Grinder" },
+    ]
+  },
+  // 6 - Networking event
+  {
+    title: "Firemní Valentýn",
+    text: `<p>Open bar. Červená výzdoba. DJ hraje The Weeknd.</p>
+<p>CEO firmy tě zastaví: <span class="highlight">"Bořku, slyšel jsem o tom německým dealu. Dobrá práce."</span></p>
+<p>U baru stojí investorka z Prahy. Slyšela tvůj pitch na posledním meetingu. Chce si promluvit.</p>
+<p class="sarcasm">Networking na Valentýna. Peak ENTJ behavior.</p>`,
+    choices: [
+      { text: "Pitch investorce svoji vizi vlastní firmy — teď nebo nikdy", next: 19, sales: 5, charm: 3, money: 10000, iq: 2, log: "Pitch investorce na valentýnské party. Assertive.", achievement: "💰 Venture Valentine" },
+      { text: "Užít si party, být sociální — ne všechno musí být pitch", next: 20, charm: 5, wisdom: 2, respect: 3, log: "Party bez agendy. Lidi si tě pamatují víc." },
+    ]
+  },
+  // 7 - Both grind + event  
+  {
+    title: "Superhero Syndrom",
+    text: `<p>Pitch hotový v 19:00. Event od 20:00. Kafe číslo pět.</p>
+<p>Na eventu jsi ostrý prvních 45 minut. Pak ti začnou padat oči.</p>
+<p>Kolegyně: "Bořku, ty vypadáš jak zombie." Ty: "Díky, to je můj Valentýnský look."</p>
+<p class="sarcasm">Hustle culture has entered the chat. A tvoje nadledvinky opustily chat.</p>
+<p>Další den se probudíš ve 14:00. <span class="loss">Poprvé za měsíc jsi vynechal gym.</span></p>
+<p>Ale pitch i event — oboje dopadlo dobře. <span class="gain">Občas se vyplatí riskovat.</span></p>`,
+    choices: [
+      { text: "Poučení: balance > burnout. Jít cvičit a doplnit spánek.", next: 21, wisdom: 5, fitness: 2, log: "Lesson learned: even machines need maintenance." },
+      { text: "Whatever, results are results. Pokračovat v tempu.", next: 22, hustle: 3, fitness: -3, money: 15000, log: "Burnout? Never heard of her." },
+    ]
+  },
+  // 8 - Gym focus
+  {
+    title: "Disciplína > Distrakce",
+    text: `<p>Trénink dokončen. Perfektní session. PR na benchi, solidní squaty, cardio na konec.</p>
+<p>Ta holka mezitím odešla. Možná příležitost, možná ne.</p>
+<p>Ale víš co? <span class="gain">Tenhle feeling po tréninku — endorfiny, accomplishment, síla</span> — tohle ti žádný Valentýn nedá.</p>
+<p>Na cestě domů ti přijde notifikace: klient z minulého týdne podepsal smlouvu. <span class="highlight">+80,000 CZK provize.</span></p>
+<p class="sarcasm">Vesmír odměňuje disciplínu. Nebo je to náhoda. Whatever.</p>`,
+    choices: [
+      { text: "Perfektní den. Protein shake, kniha, spát v 22:00.", next: 'end_discipline', money: 80000, fitness: 3, wisdom: 3, log: "Perfect day executed.", achievement: "🏛️ Stoic Valentine" },
+    ]
+  },
+  // 9 - Talk to gym girl
+  {
+    title: "Bold Move #1",
+    text: `<p>"Solidní forma na ten deadlift."</p>
+<p>Sundá si AirPods. Změří si tě pohledem. <span class="sarcasm">ENTJ meets... další ENTJ?</span></p>
+<p>"Díky. A solidní PR na tom benchi. Stovka?"</p>
+<p>Sledovala tě. <span class="highlight">Interesting.</span></p>
+<p>Jmenuje se Natálie. Studuje fyzioterapii. Cvičí 5× týdně. Na Valentýna v gymu, protože <em>"proč plýtvat večerem v restauraci, když můžu deadliftnout 120?"</em></p>
+<p>Vyměníte si čísla. Žádné hry, žádné cringe. Dva lidi, co respektují grind.</p>`,
+    choices: [
+      { text: "Napsat jí večer — rovnou navrhnout kafe, žádné hry", next: 'end_bold', charm: 5, respect: 3, wisdom: 2, log: "Číslo od Natálie. Organic. No apps needed.", achievement: "💪 Iron Connection" },
+    ]
+  },
+  // 10 - Gym selfie
+  {
+    title: "Algoritmus vs Realita",
+    text: `<p>Story posted. 100kg bench. Pěkný lighting.</p>
+<p>Za hodinu: 47 views, 3 heart reactions, 1 DM od random holky: "💪🔥"</p>
+<p class="sarcasm">Dopamin hit. Krátkodobý. Prázdný. Jako vždycky.</p>
+<p>Smazal jsi to po dvou hodinách. <span class="gain">Uvědomění: flex online ≠ respekt offline.</span></p>
+<p>Jordan Peterson by řekl: "Compare yourself to who you were yesterday, not to who someone else is today."</p>
+<p>A on by měl pravdu.</p>`,
+    choices: [
+      { text: "Lesson learned. Zpátky k práci — tiché grindování.", next: 'end_lesson', wisdom: 5, respect: 2, log: "Deleted gym selfie. Growth.", achievement: "📵 Digital Detox" },
+    ]
+  },
+  // 11 - Anna INTJ
+  {
+    title: "INTJ vs ENTJ: Round 1",
+    text: `<p>Ty: "Tvůj bio je basically Tinder IQ test. Kolik lidí propadlo?"</p>
+<p>Anna: "87 %. Gratuluju, prošel jsi předkolem."</p>
+<p>Další tři hodiny: debata o AI, knihy, stoicismus, proč je MBTI pseudověda (ale oba ho berete vážně).</p>
+<p><span class="highlight">Tohle je ten typ konverzace, kvůli které jsi 2,5 roku čekal.</span></p>
+<p>Anna: "Kafe zítra? Nekafe. Čaj. V té hipster čajovně na Florenci."</p>
+<p class="sarcasm">INTJ navrhuje schůzku. To je jako unicorn sighting.</p>`,
+    choices: [
+      { text: "Přijmout — 'Florenc, 16:00. A připrav se na debatu o free will.'", next: 'end_anna', charm: 5, iq: 2, wisdom: 3, log: "Date s Annou. Intelektuální match found.", achievement: "🧩 Mind Match" },
+    ]
+  },
+  // 12 - Klára stoic
+  {
+    title: "Tichá voda",
+    text: `<p>Ty: "Meme o stoicismu a prázdný bio. Buď jsi filozofka, nebo serial killer. Oboje je zajímavý."</p>
+<p>Klára: "Marcus Aurelius říkal, že nejlepší pomsta je nebýt jako ten, kdo ti ublížil. Takže ani jedno."</p>
+<p>Match na jiné úrovni. Žádné emoji spam, žádné hry. Čistá konverzace.</p>
+<p>Zjistíš, že čte Ego je nepřítel. Stejně jako ty. <span class="highlight">Coincidence? Asi ne.</span></p>
+<p>Klára: "Hele, nechci být basic, ale... kafe?"</p>`,
+    choices: [
+      { text: "Jasně — ale ne dneska. Žádný desperate valentýnský vibe.", next: 'end_klara', wisdom: 5, charm: 3, respect: 3, log: "Klára — stoic queen. Plánuje se kafe.", achievement: "📚 Bookworm Bond" },
+    ]
+  },
+  // 13 - Close Tinder
+  {
+    title: "Nad algoritmy",
+    text: `<p>Tinder zavřen. Telefon pryč.</p>
+<p>Otevřeš Die with Zero. Kapitola o tom, že nejlepší investice jsou do zážitků, ne do věcí.</p>
+<p class="sarcasm">Bill Perkins by asi neřekl "swipuj na Valentýna" jako životní zážitek.</p>
+<p>Uvědomíš si: 2,5 roku single není problém — je to <span class="highlight">selekce</span>. Nechceš kompromis. Nechceš "good enough."</p>
+<p><span class="gain">A to je v pohodě.</span></p>
+<p>Správná osoba přijde, když budeš nejlepší verze sebe. A na tom pracuješ každý den.</p>`,
+    choices: [
+      { text: "Kniha, čaj, spánek. Nejproduktivnější Valentýn ever.", next: 'end_above', wisdom: 5, respect: 5, log: "Valentýn solo. Zero regrets.", achievement: "👑 Self-Made Valentine" },
+    ]
+  },
+  // 14 - Pub startup
+  {
+    title: "Hospodská napkin idea",
+    text: `<p>Tři piva dovnitř a Martin říká: "Co kdybychom udělali appku na..."</p>
+<p>Normálně bys to smetl. Ale tentokrát — tentokrát má bod.</p>
+<p><span class="highlight">AI-powered tool pro malý český firmy.</span> Automatizace, kterou nikdo v CZ pořádně neřeší pro SMB segment.</p>
+<p>Ty máš sales. Martin kóduje. Honza zná účetnictví. Petr... Petr bude moral support.</p>
+<p class="sarcasm">"Každý velký startup začal na ubrousku," říkáš. "Většina tam taky skončila," říká Petr.</p>
+<p>Ale v očích máte ten look. <span class="gain">Tohle by mohlo být ono.</span></p>`,
+    choices: [
+      { text: "Zítra seriózní meeting. Business plán. Tohle se jede.", next: 'end_startup', hustle: 5, sales: 3, iq: 2, money: -5000, log: "Side-project s klukama. Potenciál.", achievement: "🚀 Co-Founder Mode" },
+    ]
+  },
+  // 15 - Chill evening
+  {
+    title: "Prostě večer",
+    text: `<p>Žádný pitch. Žádný grind. Žádná strategie.</p>
+<p>Jen čtyři kamarádi, pivo, a upřímnej kecy o životě.</p>
+<p>Honza přizná, že mu chybí ex. Martin říká, že zvažuje odchod z práce. Petr filozofuje o tom, jestli jsme v simulaci.</p>
+<p>A ty? Ty jim řekneš, že chceš založit firmu. Poprvé nahlas. Lidem, kterým věříš.</p>
+<p><span class="highlight">"Tak to udělej,"</span> říká Martin. "My ti pomůžem."</p>
+<p><span class="gain">Někdy nejdůležitější večer není ten nejproduktivnější.</span></p>`,
+    choices: [
+      { text: "Dobrý Valentýn. Neočekávaně.", next: 'end_chill', wisdom: 5, respect: 3, charm: 2, log: "Vulnerability with the boys. Rare achievement.", achievement: "❤️ Real Ones" },
+    ]
+  },
+  // 16 - Poker
+  {
+    title: "All In",
+    text: `<p>Texas Hold'em. Buy-in 500 CZK.</p>
+<p>Čteš lidi jak otevřenou knihu. Honza bluffuje, když si sahá na nos. Martin hraje tight. Petr je wildcard.</p>
+<p>Final hand: ty vs Martin. Máš pocket kings. On jde all-in.</p>
+<p class="sarcasm">Tohle je metafora tvého života a ty to víš.</p>
+<p><span class="gain">Call. Kings hold. +2,000 CZK.</span></p>
+<p>Martin: "Ty seš jak ten robot z toho filmu." Ty: "Díky."</p>`,
+    choices: [
+      { text: "Dobrý večer. Game theory v praxi.", next: 'end_poker', money: 2000, iq: 3, charm: 2, log: "Poker night výhra. Calculated.", achievement: "🃏 Card Shark" },
+    ]
+  },
+  // 17 - Reply to mom
+  {
+    title: "2:47 AM — Home",
+    text: `<p>Zpráva mámě: "Mám se rád, to se počítá, ne? 😄 Dobrou mami."</p>
+<p>Máma: "To se počítá. Ale jednou mi přiveď někoho hezkýho. Dobrou zlato. ❤️"</p>
+<p class="sarcasm">I ENTJ Commander má mámu, která mu posílá srdíčka.</p>
+<p><span class="gain">A vlastně je to fajn.</span></p>
+<p>Lehneš si. Pitch odeslaný. Máma spokojená. Svědomí čistý.</p>
+<p>Zavřeš oči a myslíš na to, kde budeš za rok. Za pět. Za deset.</p>
+<p><span class="highlight">Všude, kam se rozhodneš.</span></p>`,
+    choices: [
+      { text: "Spát. Zítra se grinduje dál.", next: 'end_mom', wisdom: 5, respect: 2, log: "Odpověď mámě ve 3 AM. Soft moment.", achievement: "🏠 Mama's Boy (with honor)" },
+    ]
+  },
+  // 18 - Follow-up
+  {
+    title: "4 AM Warrior",
+    text: `<p>Follow-up strategie hotová. CRM updatnutý. LinkedIn connection request poslaný.</p>
+<p><span class="loss">Oči pálí. Záda bolí. Caffeine crash incoming.</span></p>
+<p>Ale máš pipeline na příští měsíc, který vypadá jako sen.</p>
+<p class="sarcasm">Sleep deprivation nebo dedication? Záleží, koho se zeptáš.</p>
+<p>Bill Perkins by řekl: <span class="highlight">"Nezapomeň taky žít."</span> Ale Bill Perkins nemusí platit nájem v Česku v 20.</p>`,
+    choices: [
+      { text: "Crash. 6 hodin spánku. Pak gym.", next: 'end_grind', hustle: 3, money: 30000, fitness: -2, log: "4 AM grind complete. Worth it? TBD.", achievement: "⚔️ Hustle Over Heart" },
+    ]
+  },
+  // 19 - Pitch to investor
+  {
+    title: "Výtah do budoucnosti",
+    text: `<p>Investorka se jmenuje Markéta. Fund zaměřený na early-stage AI startupy.</p>
+<p>Máš 5 minut. Využiješ je dokonale.</p>
+<p><span class="highlight">"Zajímavý. Pošli mi one-pager. Ozvu se do týdne."</span></p>
+<p>Vizitka v kapse. Adrenalin v žilách. <span class="gain">Tohle je ten moment, proč grindíš.</span></p>
+<p>CEO tě vidí od baru a zvedne skleničku. <span class="sarcasm">Approval od šéfa na valentýnské party. Peak corporate romance.</span></p>`,
+    choices: [
+      { text: "One-pager zítra ráno. Momentum se neztrácí.", next: 'end_investor', sales: 5, hustle: 3, iq: 2, money: 15000, log: "Investor kontakt. Pipeline growing.", achievement: "📈 Future Founder" },
+    ]
+  },
+  // 20 - Social party
+  {
+    title: "Člověk, ne stroj",
+    text: `<p>Tančíš. Směješ se. Kolegyně říká vtip a ty se zasměješ — ne ze zdvořilosti, ale protože je fakt vtipná.</p>
+<p>Žádný pitch. Žádný networking. Jen... being human.</p>
+<p class="sarcasm">Shocking plot twist: ENTJ se umí bavit bez agendy.</p>
+<p>Na konci večera ti tři lidi řeknou: <span class="highlight">"Hele, s tebou je sranda. Proč jsi normálně tak seriózní?"</span></p>
+<p><span class="gain">Uvědomění: lidi si pamatují, jak se s tebou cítili, ne co jsi jim prodal.</span></p>
+<p>Daniel Goleman by byl hrdý.</p>`,
+    choices: [
+      { text: "Dobrý večer. A dobrý lesson.", next: 'end_social', charm: 5, wisdom: 5, respect: 3, log: "Party bez agendy. EQ level up.", achievement: "🎭 EQ Upgrade" },
+    ]
+  },
+  // 21 - Balance lesson
+  {
+    title: "Recalibrace",
+    text: `<p>Gym. Sauna. 8 hodin spánku.</p>
+<p>Tělo říká díky. Mozek říká díky. <span class="gain">Produktivita další den: +200%.</span></p>
+<p>Zjišťuješ, že sustainable > intensity. Že long game > sprint.</p>
+<p>Jordan Peterson: <span class="highlight">"Treat yourself like someone you are responsible for helping."</span></p>
+<p>A konečně to bereš vážně.</p>`,
+    choices: [
+      { text: "Balance unlocked. Nová strategie: grind smart, ne hard.", next: 'end_balance', wisdom: 5, fitness: 3, hustle: 2, log: "Balance > burnout. Lesson internalized.", achievement: "⚖️ Balanced Commander" },
+    ]
+  },
+  // 22 - Push through
+  {
+    title: "Stroj bez pauzy",
+    text: `<p>Další týden: dvě prezentace, jeden cold call marathon, nula rest days.</p>
+<p><span class="loss">Tělo protestuje. Spánek 4-5 hodin. Gym vynechaný 3×.</span></p>
+<p>Ale výsledky? <span class="gain">Čísla rostou. Pipeline plný. Šéf impressed.</span></p>
+<p class="sarcasm">Otázka není jestli to funguje. Otázka je, jak dlouho.</p>
+<p>Ryan Holiday: <span class="highlight">"Ego is the enemy."</span> A tvoje ego ti právě říká, že nepotřebuješ odpočinek.</p>
+<p>Kdo má pravdu — ty, nebo Ryan Holiday?</p>`,
+    choices: [
+      { text: "...asi Ryan Holiday. Zpomalit. Trochu.", next: 'end_ego', wisdom: 5, hustle: -2, fitness: 2, money: 40000, log: "Ego checked. Barely.", achievement: "🪞 Mirror Moment" },
+    ]
+  },
+];
+
+const endings = {
+  end_discipline: {
+    title: "KONEC: Stoický válečník",
+    text: `<p class="highlight" style="font-size:18px">🏛️ THE STOIC PATH</p>
+<p>Valentýn 2026 strávený přesně tak, jak jsi chtěl: na svých podmínkách.</p>
+<p>Žádný kompromis. Žádný cringe. Jen čistá disciplína a PR na benchi.</p>
+<p>Marcus Aurelius by schvaloval.</p>
+<p class="gain">A ten deal? Podepsal se za týden. +80,000 CZK.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_bold: {
+    title: "KONEC: Železná connection",
+    text: `<p class="highlight" style="font-size:18px">💪 THE IRON BOND</p>
+<p>Natálie. Fyzioterapeutka. Deadlift 120. Nula bullshit tolerance.</p>
+<p>První schůzka: gym + kafe. Druhá schůzka: hike + debata o biohackingu.</p>
+<p>2,5 roku jsi čekal na někoho, kdo stojí za čas. <span class="gain">Možná jsi právě našel.</span></p>
+<p class="sarcasm">A potkal jsi ji v gymu na Valentýna, protože oba jste příliš disciplinovaní na restauraci.</p>
+<p>Ironické? Dokonalé.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_lesson: {
+    title: "KONEC: Tichý růst",
+    text: `<p class="highlight" style="font-size:18px">📵 THE QUIET GROWTH</p>
+<p>Smazaná gym selfie. Malý moment, velký lesson.</p>
+<p>Nepotřebuješ validaci od algoritmů. Tvoje výsledky mluví samy.</p>
+<p class="gain">Tenhle Valentýn ti dal víc než kterýkoliv rande: sebeuvědomění.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_anna: {
+    title: "KONEC: Intelektuální jiskra",
+    text: `<p class="highlight" style="font-size:18px">🧩 THE MIND MATCH</p>
+<p>INTJ + ENTJ. Dva stratégové. Jedna čajovna.</p>
+<p>Debata o free will trvala 4 hodiny. Ani jeden nechtěl odejít první.</p>
+<p class="gain">Poprvé za 2,5 roku máš pocit, že jsi potkal někoho na tvé úrovni.</span></p>
+<p class="sarcasm">A začalo to sarkastickou zprávou na Tinderu. Na Valentýna. Život je weird.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_klara: {
+    title: "KONEC: Stoická duše",
+    text: `<p class="highlight" style="font-size:18px">📚 THE BOOKWORM BOND</p>
+<p>Klára. Tichá, hluboká, nečekaná.</p>
+<p>Kafe se změnilo na tříhodinovou procházku. Mluvili jste o Ryanu Holidayovi, o egu, o tom co znamená žít dobře.</p>
+<p class="gain">Někdy nejlepší connections přijdou, když je nehledáš.</p>
+<p>Ale ty jsi je nehledal. Ty jsi je našel s klidem. A to je rozdíl.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_above: {
+    title: "KONEC: Nad algoritmy",
+    text: `<p class="highlight" style="font-size:18px">👑 THE SELF-MADE VALENTINE</p>
+<p>Žádný match. Žádný date. Žádný compromise.</p>
+<p>Jen ty, Die with Zero, a absolutní klid s tím, kdo jsi.</p>
+<p class="gain">V 20 letech vědět, co nechceš — to je vzácnější než jakýkoliv vztah.</p>
+<p>Správná osoba přijde. A až přijde, budeš ready. Protože jsi neztrácel čas s wrong ones.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_startup: {
+    title: "KONEC: Genesis",
+    text: `<p class="highlight" style="font-size:18px">🚀 THE CO-FOUNDER PATH</p>
+<p>Hospodský brainstorm → business plan → first prototype za 3 měsíce.</p>
+<p>Martin kóduje. Honza dělá finance. Petr... Petr dělá memes pro marketing.</p>
+<p class="gain">A ty? Ty prodáváš. Protože to je tvůj superpower.</p>
+<p>Valentýn 2026: den, kdy se zrodil startup, který změnil český SMB segment.</p>
+<p class="sarcasm">Nebo taky ne. Ale aspoň to zkusíš.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_chill: {
+    title: "KONEC: Opravdoví",
+    text: `<p class="highlight" style="font-size:18px">❤️ THE REAL ONES</p>
+<p>Žádný romantický Valentýn. Něco lepšího.</p>
+<p>Večer, kde ses poprvé nahlas přiznal, kam míříš. A kamarádi řekli: "Jdeme s tebou."</p>
+<p class="gain">Net worth roste. Ale tohle — tohle se nedá koupit.</p>
+<p>Brutální loajalita goes both ways.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_poker: {
+    title: "KONEC: Kalkulovaný večer",
+    text: `<p class="highlight" style="font-size:18px">🃏 THE CALCULATED PLAY</p>
+<p>+2,000 CZK. Ale hlavně: večer plný strategie, smíchu a přátelství.</p>
+<p>Poker je jak byznys — čteš lidi, manageuješ risk, a víš kdy jít all-in.</p>
+<p class="gain">Best Valentýn? Asi ne. Best páteční večer? Definitely.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_mom: {
+    title: "KONEC: Lidskost",
+    text: `<p class="highlight" style="font-size:18px">🏠 THE HUMAN MOMENT</p>
+<p>Pitch odeslaný. Máma happy. Svědomí čistý.</p>
+<p>I Commander potřebuje připomenutí, že za těmi čísly je člověk. A za tím člověkem je rodina.</p>
+<p class="gain">Jednou jí přivedeš někoho hezkýho. Ale teď? Teď buduješ.</p>
+<p>A ona to ví. Proto posílá srdíčka ve 3 AM.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_grind: {
+    title: "KONEC: Hustle Never Sleeps",
+    text: `<p class="highlight" style="font-size:18px">⚔️ THE GRIND PATH</p>
+<p>4 AM follow-up. Pipeline na měsíc dopředu. <span class="gain">Čísla? Impresivní.</span></p>
+<p><span class="loss">Zdraví? Otázka na jindy.</span></p>
+<p>Ryan Holiday by řekl, ať zpomalíš. Bill Perkins by řekl, ať žiješ.</p>
+<p>Ty říkáš: "Zítra." A zítra řekneš to samý.</p>
+<p class="sarcasm">Ale hey — aspoň máš pipeline.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_investor: {
+    title: "KONEC: Venture Valentine",
+    text: `<p class="highlight" style="font-size:18px">📈 THE FUTURE FOUNDER</p>
+<p>Markéta se ozvala za 3 dny. One-pager ji zaujal.</p>
+<p><span class="gain">"Pojďme se bavit o pre-seed."</span></p>
+<p>Valentýn 2026: místo rande jsi získal potenciálního investora na svůj budoucí startup.</p>
+<p>Romantické? Ne. <span class="highlight">Lepší? Absolutely.</span></p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_social: {
+    title: "KONEC: EQ Level Up",
+    text: `<p class="highlight" style="font-size:18px">🎭 THE EMOTIONAL UPGRADE</p>
+<p>Daniel Goleman říká, že EQ je skill. Dneska jsi trénoval.</p>
+<p class="gain">Lidi si tě pamatují. Ne kvůli číslům — kvůli tomu, jaký jsi.</p>
+<p>ENTJ paradox: nejefektivnější networking je ten, kde nenetworkuješ.</p>
+<p>Lesson stored. EQ upgraded. Game changed.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_balance: {
+    title: "KONEC: Rovnováha",
+    text: `<p class="highlight" style="font-size:18px">⚖️ THE BALANCED PATH</p>
+<p>Grind smart, ne hard. Sustainable wins > burnout sprints.</p>
+<p class="gain">Další měsíc: lepší výsledky s méně hodinami. Protože recovery je taky strategie.</p>
+<p>Jordan Peterson: "Treat yourself like someone you are responsible for helping."</p>
+<p>Konečně to bereš vážně.</p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+  end_ego: {
+    title: "KONEC: Zrcadlo",
+    text: `<p class="highlight" style="font-size:18px">🪞 THE MIRROR MOMENT</p>
+<p>Ego ti řeklo: nepotřebuješ pauzu. Ryan Holiday řekl: ego je nepřítel.</p>
+<p class="gain">Zpomalil jsi. Těžce. Ale zpomalil.</p>
+<p>A zjistil jsi, že zpomalit ≠ prohrát. Zpomalit = strategický regroup.</p>
+<p>V 20 letech tenhle lesson? <span class="highlight">Většina lidí ho pochopí v 40. Pokud vůbec.</span></p>
+<p style="color:#666;margin-top:20px">— ENTJ: THE GAME — Valentýn 2026 Edition —</p>`
+  },
+};
+
+function startGame() {
+  document.getElementById('intro-screen').style.display = 'none';
+  document.getElementById('game').style.display = 'flex';
+  renderScene(0);
+}
+
+function renderScene(id) {
+  if (typeof id === 'string' && id.startsWith('end_')) {
+    const e = endings[id];
+    document.getElementById('scene-title').textContent = e.title;
+    document.getElementById('scene-text').innerHTML = e.text;
+    document.getElementById('choices').innerHTML = `<button class="choice-btn" onclick="location.reload()"><span class="choice-key">[R]</span> Hrát znovu — jiný volby, jiný osud</button>`;
+    updateUI();
+    return;
+  }
+  const s = scenes[id];
+  S.scene = id;
+  document.getElementById('scene-title').textContent = s.title;
+  document.getElementById('scene-text').innerHTML = s.text;
+  const ch = document.getElementById('choices');
+  ch.innerHTML = '';
+  s.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-key">[${i+1}]</span> ${c.text}`;
+    btn.onclick = () => pick(c);
+    ch.appendChild(btn);
+  });
+  updateUI();
+}
+
+function pick(c) {
+  if (c.money) S.money += c.money;
+  if (c.respect) S.respect = Math.max(0, Math.min(100, S.respect + c.respect));
+  if (c.iq) S.iq += c.iq;
+  if (c.sales) S.sales = clamp(S.sales + c.sales);
+  if (c.tech) S.tech = clamp(S.tech + c.tech);
+  if (c.charm) S.charm = clamp(S.charm + c.charm);
+  if (c.hustle) S.hustle = clamp(S.hustle + c.hustle);
+  if (c.fitness) S.fitness = clamp(S.fitness + c.fitness);
+  if (c.wisdom) S.wisdom = clamp(S.wisdom + c.wisdom);
+  if (c.log) addLog(c.log);
+  if (c.achievement && !S.achievements.includes(c.achievement)) {
+    S.achievements.push(c.achievement);
+    updateAchievements();
+  }
+  renderScene(c.next);
+}
+
+function clamp(v) { return Math.max(0, Math.min(100, v)); }
+
+function updateUI() {
+  document.getElementById('money').textContent = S.money.toLocaleString('cs-CZ');
+  document.getElementById('respect').textContent = S.respect;
+  document.getElementById('iq').textContent = S.iq;
+  document.getElementById('age').textContent = S.age;
+  ['sales','tech','charm','hustle','fitness','wisdom'].forEach(s => {
+    document.getElementById('skill-'+s).style.width = S[s]+'%';
+  });
+}
+
+function addLog(text) {
+  S.log.unshift(text);
+  const el = document.getElementById('log');
+  const d = document.createElement('div');
+  d.className = 'log-entry';
+  d.textContent = text;
+  el.prepend(d);
+}
+
+function updateAchievements() {
+  const el = document.getElementById('achievements');
+  el.innerHTML = S.achievements.map(a => `<span class="achievement">${a}</span>`).join('');
+}
+
+document.addEventListener('keydown', e => {
+  const btns = document.querySelectorAll('.choice-btn');
+  const n = parseInt(e.key);
+  if (n >= 1 && n <= btns.length) btns[n-1].click();
+  if (e.key === 'r' || e.key === 'R') {
+    const rb = document.querySelector('.choice-btn');
+    if (rb && rb.textContent.includes('Hrát znovu')) rb.click();
+  }
+});
+</script>
+</body>
+</html>

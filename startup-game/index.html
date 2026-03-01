@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOUNDER'S GRIND — Startup Tycoon</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;900&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --card2: #1a1a28;
+  --accent: #6c5ce7;
+  --accent2: #a29bfe;
+  --green: #00e676;
+  --red: #ff5252;
+  --yellow: #ffd740;
+  --orange: #ff9100;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --border: #2a2a3a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* INTRO SCREEN */
+#intro {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 24px;
+  transition: opacity 0.6s;
+}
+#intro.hidden { opacity: 0; pointer-events: none; }
+#intro h1 {
+  font-size: 3rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+#intro p { color: var(--muted); max-width: 500px; text-align: center; line-height: 1.6; }
+#intro input {
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); padding: 12px 20px; border-radius: 8px;
+  font-size: 1rem; width: 280px; text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+#intro input:focus { outline: none; border-color: var(--accent); }
+.btn-start {
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: white; border: none; padding: 14px 40px;
+  border-radius: 8px; font-size: 1.1rem; font-weight: 700;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,92,231,0.4); }
+
+/* GAME LAYOUT */
+#game { display: none; }
+#game.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* TOP BAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-left h2 { font-size: 1rem; font-weight: 700; }
+.topbar-left .month {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent2); font-size: 0.85rem;
+}
+.stats-bar { display: flex; gap: 20px; }
+.stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.stat-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; }
+.stat-value.money { color: var(--green); }
+.stat-value.burn { color: var(--red); }
+.stat-value.users { color: var(--accent2); }
+.stat-value.energy { color: var(--yellow); }
+.stat-value.rep { color: var(--orange); }
+
+/* MAIN AREA */
+.main-area {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  flex: 1; overflow: hidden;
+}
+
+/* LEFT PANEL */
+.panel-left {
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+}
+.panel-title {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--muted); margin-bottom: 12px;
+}
+.action-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 12px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  cursor: pointer; margin-bottom: 6px;
+  transition: all 0.15s; font-size: 0.85rem;
+  text-align: left;
+}
+.action-btn:hover { border-color: var(--accent); background: rgba(108,92,231,0.1); }
+.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.action-btn .emoji { font-size: 1.1rem; width: 24px; text-align: center; }
+.action-btn .cost {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; color: var(--muted);
+}
+.action-btn .cost.energy-cost { color: var(--yellow); }
+.separator { height: 1px; background: var(--border); margin: 12px 0; }
+
+/* CENTER */
+.panel-center {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+}
+.event-log {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.log-entry {
+  padding: 12px 16px;
+  background: var(--card);
+  border-radius: 8px;
+  border-left: 3px solid var(--border);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: fadeIn 0.3s ease;
+}
+.log-entry.good { border-left-color: var(--green); }
+.log-entry.bad { border-left-color: var(--red); }
+.log-entry.info { border-left-color: var(--accent); }
+.log-entry.event { border-left-color: var(--yellow); }
+.log-entry.milestone { border-left-color: var(--orange); background: rgba(255,145,0,0.05); }
+.log-entry .time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; color: var(--muted);
+  margin-bottom: 4px;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* RIGHT PANEL */
+.panel-right {
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+}
+.company-card {
+  padding: 16px; background: var(--card2);
+  border-radius: 10px; margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.company-card h3 { font-size: 1rem; margin-bottom: 8px; }
+.progress-bar {
+  height: 6px; background: var(--border); border-radius: 3px;
+  margin: 6px 0; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.progress-fill.product { background: var(--accent); }
+.progress-fill.market { background: var(--green); }
+.progress-fill.hype { background: var(--yellow); }
+.skill-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  margin-top: 8px;
+}
+.skill-item {
+  font-size: 0.75rem; padding: 6px 8px;
+  background: var(--bg); border-radius: 6px;
+  display: flex; justify-content: space-between;
+}
+.skill-item span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent2);
+}
+.team-member {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: var(--bg);
+  border-radius: 8px; margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+.team-member .role { color: var(--muted); font-size: 0.7rem; }
+
+/* NEXT MONTH BTN */
+.next-month-btn {
+  position: fixed; bottom: 24px; right: 24px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: white; border: none; padding: 14px 28px;
+  border-radius: 12px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; z-index: 100;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(108,92,231,0.3);
+}
+.next-month-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,92,231,0.5); }
+.next-month-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px;
+  max-width: 500px; width: 90%;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal h3 { font-size: 1.2rem; margin-bottom: 16px; }
+.modal-choice {
+  padding: 12px 16px; background: var(--card2);
+  border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 8px; cursor: pointer;
+  transition: all 0.15s;
+}
+.modal-choice:hover { border-color: var(--accent); background: rgba(108,92,231,0.1); }
+.modal-choice .label { font-weight: 600; margin-bottom: 4px; }
+.modal-choice .desc { font-size: 0.8rem; color: var(--muted); }
+
+/* GAME OVER */
+#gameover {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+}
+#gameover.active { display: flex; }
+#gameover h1 { font-size: 2.5rem; font-weight: 900; }
+#gameover .final-stats { text-align: center; color: var(--muted); line-height: 2; }
+#gameover .final-stats span { color: var(--text); font-weight: 700; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* NOTIFICATION TOAST */
+.toast {
+  position: fixed; top: 70px; right: 24px;
+  background: var(--card2); border: 1px solid var(--accent);
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 0.85rem; z-index: 150;
+  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.5s forwards;
+  max-width: 300px;
+}
+@keyframes slideIn { from { transform: translateX(100px); opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro">
+  <h1>FOUNDER'S GRIND</h1>
+  <p>Postav startup od nuly. Máš 24 měsíců, garážový notebook a ambice. Dokážeš vybudovat unicorn?</p>
+  <input type="text" id="companyName" placeholder="Název tvého startupu" value="" autofocus>
+  <button class="btn-start" onclick="startGame()">ZALOŽIT FIRMU →</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2 id="companyTitle">—</h2>
+      <span class="month" id="monthDisplay">Měsíc 1 / 24</span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-label">Cash</span>
+        <span class="stat-value money" id="cashDisplay">50 000 Kč</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Burn/měs</span>
+        <span class="stat-value burn" id="burnDisplay">0 Kč</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Users</span>
+        <span class="stat-value users" id="usersDisplay">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Energie</span>
+        <span class="stat-value energy" id="energyDisplay">10/10</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Reputace</span>
+        <span class="stat-value rep" id="repDisplay">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- LEFT: ACTIONS -->
+    <div class="panel-left">
+      <div class="panel-title">⚡ Akce</div>
+      <div id="actionList"></div>
+    </div>
+
+    <!-- CENTER: EVENT LOG -->
+    <div class="panel-center">
+      <div class="event-log" id="eventLog"></div>
+    </div>
+
+    <!-- RIGHT: STATUS -->
+    <div class="panel-right">
+      <div class="panel-title">📊 Firma</div>
+      <div class="company-card">
+        <h3>Produkt</h3>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+          <span>Kvalita</span><span id="productPct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill product" id="productBar" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+          <span>Product-Market Fit</span><span id="pmfPct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill market" id="pmfBar" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted)">
+          <span>Hype</span><span id="hypePct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill hype" id="hypeBar" style="width:0%"></div></div>
+      </div>
+
+      <div class="panel-title">🧠 Tvoje skills</div>
+      <div class="company-card">
+        <div class="skill-grid" id="skillGrid"></div>
+      </div>
+
+      <div class="panel-title">👥 Tým</div>
+      <div id="teamList"></div>
+
+      <div class="panel-title" style="margin-top:16px">🏆 Milníky</div>
+      <div id="milestoneList" style="font-size:0.8rem;color:var(--muted)">Zatím žádné...</div>
+    </div>
+  </div>
+
+  <button class="next-month-btn" id="nextMonthBtn" onclick="nextMonth()">
+    DALŠÍ MĚSÍC →
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameover">
+  <h1 id="goTitle">—</h1>
+  <div class="final-stats" id="goStats"></div>
+  <button class="btn-start" onclick="location.reload()">HRÁT ZNOVA</button>
+</div>
+
+<script>
+// ============== GAME STATE ==============
+let G = {
+  company: '',
+  month: 1,
+  maxMonths: 24,
+  cash: 50000,
+  burn: 0,
+  users: 0,
+  energy: 10,
+  maxEnergy: 10,
+  rep: 0,
+  product: 0,    // 0-100
+  pmf: 0,        // 0-100
+  hype: 0,       // 0-100
+  skills: { coding: 3, sales: 1, marketing: 1, leadership: 1, networking: 1, design: 1 },
+  team: [],
+  milestones: [],
+  raised: 0,
+  totalRevenue: 0,
+  pivots: 0,
+  launched: false,
+  sector: null,
+  valuation: 0,
+};
+
+const SECTORS = [
+  { name: 'AI SaaS', icon: '🤖', bonus: 'coding', pmfBase: 12 },
+  { name: 'FinTech', icon: '💰', bonus: 'sales', pmfBase: 10 },
+  { name: 'EdTech', icon: '📚', bonus: 'marketing', pmfBase: 15 },
+  { name: 'HealthTech', icon: '🏥', bonus: 'design', pmfBase: 8 },
+  { name: 'Creator Economy', icon: '🎨', bonus: 'networking', pmfBase: 14 },
+];
+
+const RANDOM_EVENTS = [
+  { text: 'Tvůj tweet o startupu se stal virální! +500 users, +15 hype.', effect: s => { s.users += 500; s.hype = Math.min(100, s.hype + 15); }, type: 'good', chance: 0.08 },
+  { text: 'Konkurent zkopíroval tvůj feature. -10 hype, ale +5 product (motivace!).', effect: s => { s.hype = Math.max(0, s.hype - 10); s.product = Math.min(100, s.product + 5); }, type: 'bad', chance: 0.1 },
+  { text: 'Investorka ti napsala na LinkedIn! +20 rep.', effect: s => { s.rep += 20; }, type: 'good', chance: 0.07 },
+  { text: 'Server spadl na 6 hodin. -200 users, -5 rep.', effect: s => { s.users = Math.max(0, s.users - 200); s.rep = Math.max(0, s.rep - 5); }, type: 'bad', chance: 0.08 },
+  { text: 'Zákazník napsal skvělou recenzi na ProductHunt! +10 hype, +300 users.', effect: s => { s.hype = Math.min(100, s.hype + 10); s.users += 300; }, type: 'good', chance: 0.06 },
+  { text: 'Tvůj klíčový dev dostal nabídku od Googlu. Moral drop.', effect: s => { s.product = Math.max(0, s.product - 5); }, type: 'bad', chance: 0.06 },
+  { text: 'Podcast tě pozval na rozhovor! +25 hype, +10 rep.', effect: s => { s.hype = Math.min(100, s.hype + 25); s.rep += 10; }, type: 'good', chance: 0.05 },
+  { text: 'Bug v produkci ztratil data zákazníků. -15 product, -500 users.', effect: s => { s.product = Math.max(0, s.product - 15); s.users = Math.max(0, s.users - 500); }, type: 'bad', chance: 0.04 },
+  { text: 'Government grant schválen! +80 000 Kč.', effect: s => { s.cash += 80000; }, type: 'good', chance: 0.05 },
+  { text: 'Regulace v tvém sektoru se zpřísnila. -5 PMF.', effect: s => { s.pmf = Math.max(0, s.pmf - 5); }, type: 'bad', chance: 0.06 },
+  { text: 'Kamarád ze střední přivedl 3 platící firemní klienty! +40 000 Kč, +5 rep.', effect: s => { s.cash += 40000; s.rep += 5; }, type: 'good', chance: 0.07 },
+  { text: 'Burnout wave – celý tým potřebuje pauzu. Příští měsíc -2 max energie.', effect: s => { s.maxEnergy = Math.max(4, s.maxEnergy - 2); }, type: 'bad', chance: 0.06 },
+  { text: 'YC Startup School tě featurnul! +1000 users, +30 hype.', effect: s => { s.users += 1000; s.hype = Math.min(100, s.hype + 30); }, type: 'good', chance: 0.03 },
+  { text: 'Největší zákazník odešel ke konkurenci. -20 000 Kč MRR.', effect: s => { s.cash -= 20000; }, type: 'bad', chance: 0.06 },
+];
+
+const MILESTONE_CHECKS = [
+  { id: 'first100', label: '🎯 100 uživatelů', check: s => s.users >= 100 },
+  { id: 'first1k', label: '🚀 1 000 uživatelů', check: s => s.users >= 1000 },
+  { id: 'first10k', label: '🦄 10 000 uživatelů', check: s => s.users >= 10000 },
+  { id: 'pmf50', label: '📈 Product-Market Fit > 50%', check: s => s.pmf >= 50 },
+  { id: 'pmf80', label: '💎 Product-Market Fit > 80%', check: s => s.pmf >= 80 },
+  { id: 'raised', label: '💸 Získal investici', check: s => s.raised > 0 },
+  { id: 'million', label: '🏦 1M Kč na účtu', check: s => s.cash >= 1000000 },
+  { id: 'team5', label: '👥 Tým 5+ lidí', check: s => s.team.length >= 5 },
+  { id: 'launch', label: '🎉 Produkt launchnut', check: s => s.launched },
+  { id: 'rep100', label: '⭐ Reputace 100+', check: s => s.rep >= 100 },
+];
+
+// ============== ACTIONS ==============
+function getActions() {
+  const a = [];
+  a.push({ id: 'code', emoji: '💻', label: 'Kódit produkt', cost: 2, costType: 'energy', desc: 'Product +8-15', action: doCode });
+  a.push({ id: 'design', emoji: '🎨', label: 'Vylepšit UX/design', cost: 2, costType: 'energy', desc: 'Product +5, PMF +3', action: doDesign });
+  a.push({ id: 'research', emoji: '🔬', label: 'User research', cost: 2, costType: 'energy', desc: 'PMF +8-12', action: doResearch });
+  a.push({ id: 'sell', emoji: '📞', label: 'Cold calling', cost: 3, costType: 'energy', desc: 'Users + revenue', action: doSell });
+  a.push({ id: 'market', emoji: '📱', label: 'Marketing push', cost: 2, costType: 'energy', desc: 'Hype +10, users dle hype', action: doMarketing });
+  a.push({ id: 'content', emoji: '✍️', label: 'Content marketing', cost: 1, costType: 'energy', desc: 'Hype +5, rep +3', action: doContent });
+  a.push({ id: 'network', emoji: '🤝', label: 'Networking event', cost: 2, costType: 'energy', desc: 'Rep +10-20, random kontakt', action: doNetwork });
+  a.push({ id: 'hire', emoji: '👤', label: 'Najmout člověka', cost: 30000, costType: 'cash', desc: '-30k Kč + měsíční burn', action: doHire, condition: () => G.cash >= 30000 });
+  a.push({ id: 'fundraise', emoji: '💰', label: 'Pitch investorům', cost: 3, costType: 'energy', desc: 'Závisí na rep + PMF', action: doFundraise, condition: () => G.rep >= 20 });
+  a.push({ id: 'launch', emoji: '🚀', label: 'LAUNCH produkt', cost: 4, costType: 'energy', desc: 'Velký boost, jednou za hru', action: doLaunch, condition: () => !G.launched && G.product >= 40 });
+  a.push({ id: 'pivot', emoji: '🔄', label: 'Pivot', cost: 3, costType: 'energy', desc: 'Změnit sektor', action: doPivot, condition: () => G.month > 3 });
+  a.push({ id: 'gym', emoji: '🏋️', label: 'Jít do gymu', cost: 1, costType: 'energy', desc: 'Příští měsíc +2 max energie', action: doGym });
+  a.push({ id: 'rest', emoji: '😴', label: 'Odpočinek', cost: 0, costType: 'energy', desc: 'Regenerace +3 energie', action: doRest });
+  return a;
+}
+
+// ============== ACTION IMPLEMENTATIONS ==============
+function doCode() {
+  const boost = rand(8, 15) + Math.floor(G.skills.coding / 2);
+  G.product = Math.min(100, G.product + boost);
+  G.skills.coding += 0.3;
+  log(`Zakódil jsi nový feature. Product +${boost}.`, 'good');
+}
+
+function doDesign() {
+  const pb = rand(3, 7) + Math.floor(G.skills.design / 2);
+  const pmfb = rand(2, 5);
+  G.product = Math.min(100, G.product + pb);
+  G.pmf = Math.min(100, G.pmf + pmfb);
+  G.skills.design += 0.3;
+  log(`Přepracoval jsi UI. Product +${pb}, PMF +${pmfb}.`, 'good');
+}
+
+function doResearch() {
+  const boost = rand(8, 12) + Math.floor(G.skills.marketing / 2);
+  G.pmf = Math.min(100, G.pmf + boost);
+  G.skills.marketing += 0.2;
+  log(`Mluvil jsi s 15 potenciálními zákazníky. PMF +${boost}.`, 'info');
+}
+
+function doSell() {
+  const calls = rand(10, 30) + G.skills.sales * 3;
+  const converted = Math.floor(calls * (0.05 + G.pmf / 500));
+  const revenue = converted * rand(500, 2000);
+  G.users += converted;
+  G.cash += revenue;
+  G.totalRevenue += revenue;
+  G.skills.sales += 0.4;
+  log(`${calls} callů, ${converted} konverzí. +${fmt(revenue)} Kč revenue, +${converted} users.`, converted > 3 ? 'good' : 'info');
+}
+
+function doMarketing() {
+  const hypeBoost = rand(8, 15) + Math.floor(G.skills.marketing / 2);
+  G.hype = Math.min(100, G.hype + hypeBoost);
+  const newUsers = Math.floor(G.hype * rand(5, 15));
+  G.users += newUsers;
+  G.skills.marketing += 0.3;
+  log(`Marketing kampaň! Hype +${hypeBoost}, +${newUsers} nových uživatelů.`, 'good');
+}
+
+function doContent() {
+  G.hype = Math.min(100, G.hype + rand(3, 8));
+  G.rep += rand(2, 5);
+  G.skills.marketing += 0.2;
+  log('Napsal jsi thread na X/LinkedIn. Hype a rep mírně nahoru.', 'info');
+}
+
+function doNetwork() {
+  const repBoost = rand(10, 20) + Math.floor(G.skills.networking / 2);
+  G.rep += repBoost;
+  G.skills.networking += 0.4;
+  const luck = Math.random();
+  if (luck < 0.3) {
+    log(`Networking event. Rep +${repBoost}. Potkal jsi potenciálního investora!`, 'good');
+    G.rep += 10;
+  } else if (luck < 0.5) {
+    log(`Networking event. Rep +${repBoost}. Domluvil jsi partnerství – +500 users.`, 'good');
+    G.users += 500;
+  } else {
+    log(`Networking event. Rep +${repBoost}. Dobrý konverzace, nové kontakty.`, 'info');
+  }
+}
+
+function doHire() {
+  showModal('Koho chceš najmout?', [
+    { label: '👨‍💻 Developer', desc: 'Product +5/měs, burn +15 000 Kč', action: () => hire('Developer', 'coding', 15000) },
+    { label: '📈 Sales rep', desc: 'Auto-revenue, burn +12 000 Kč', action: () => hire('Sales', 'sales', 12000) },
+    { label: '🎨 Designer', desc: 'Product +3/měs, PMF +2/měs, burn +13 000 Kč', action: () => hire('Designer', 'design', 13000) },
+    { label: '📱 Marketer', desc: 'Hype +5/měs, users growth, burn +12 000 Kč', action: () => hire('Marketer', 'marketing', 12000) },
+    { label: '🧑‍💼 COO', desc: 'Max energy +2, burn +20 000 Kč', action: () => hire('COO', 'leadership', 20000) },
+  ]);
+  return false; // don't consume energy yet
+}
+
+function hire(role, skill, salary) {
+  G.cash -= 30000; // hiring cost
+  G.burn += salary;
+  G.team.push({ role, skill, salary, month: G.month });
+  G.skills.leadership += 0.2;
+  if (role === 'COO') G.maxEnergy += 2;
+  log(`Najal jsi ${role}! Burn +${fmt(salary)} Kč/měs.`, 'info');
+  closeModal();
+  render();
+}
+
+function doFundraise() {
+  const val = calcValuation();
+  const successChance = Math.min(0.8, (G.rep / 200) + (G.pmf / 200) + (G.users / 50000));
+  
+  if (Math.random() < successChance) {
+    const amount = Math.floor(val * rand(5, 15) / 100);
+    showModal(`💰 Investor nabízí ${fmt(amount)} Kč za ${Math.floor(amount/val*100)}% equity!`, [
+      { label: '✅ Přijmout', desc: `+${fmt(amount)} Kč cash`, action: () => {
+        G.cash += amount;
+        G.raised += amount;
+        G.rep += 15;
+        log(`Uzavřel jsi investici! +${fmt(amount)} Kč. Valuace: ${fmt(val)} Kč.`, 'milestone');
+        closeModal(); render();
+      }},
+      { label: '❌ Odmítnout', desc: 'Bootstrapping forever', action: () => {
+        G.rep += 5;
+        log('Odmítl jsi investici. Respect.', 'info');
+        closeModal(); render();
+      }},
+    ]);
+  } else {
+    log(`Pitch selhal. Investor řekl "zajímavé, ozveme se." (Neozvou se.) Rep +3.`, 'bad');
+    G.rep += 3;
+  }
+  return false;
+}
+
+function doLaunch() {
+  G.launched = true;
+  const userBoom = Math.floor((G.hype + G.product) * rand(10, 30));
+  const hypeBoom = rand(15, 30);
+  G.users += userBoom;
+  G.hype = Math.min(100, G.hype + hypeBoom);
+  G.rep += 25;
+  log(`🚀 LAUNCH! ${G.company} je live! +${userBoom} users, hype +${hypeBoom}, rep +25!`, 'milestone');
+}
+
+function doPivot() {
+  const available = SECTORS.filter(s => s.name !== (G.sector ? G.sector.name : ''));
+  showModal('Pivotovat do jakého sektoru?', available.map(s => ({
+    label: `${s.icon} ${s.name}`,
+    desc: `Bonus: ${s.bonus}, PMF se resetne na ${Math.floor(G.pmf * 0.3)}%`,
+    action: () => {
+      G.sector = s;
+      G.pmf = Math.floor(G.pmf * 0.3);
+      G.product = Math.floor(G.product * 0.6);
+      G.pivots++;
+      log(`Pivot do ${s.icon} ${s.name}! Product a PMF částečně resetnuty.`, 'event');
+      closeModal(); render();
+    }
+  })));
+  return false;
+}
+
+function doGym() {
+  G.maxEnergy = Math.min(14, G.maxEnergy + 2);
+  G.skills.leadership += 0.1;
+  log('🏋️ Gym session. Příští měsíc budeš mít víc energie. Disciplína > motivace.', 'good');
+}
+
+function doRest() {
+  const recover = 3;
+  G.energy = Math.min(G.maxEnergy, G.energy + recover);
+  log('😴 Odpočinek. Energie +3. Někdy je nejproduktivnější věc nic nedělat.', 'info');
+}
+
+// ============== GAME FLOW ==============
+function startGame() {
+  const name = document.getElementById('companyName').value.trim() || 'Unnamed Startup';
+  G.company = name;
+  document.getElementById('companyTitle').textContent = name;
+  document.getElementById('intro').classList.add('hidden');
+  
+  // Choose sector
+  setTimeout(() => {
+    document.getElementById('game').classList.add('active');
+    showModal('Vyber si sektor:', SECTORS.map(s => ({
+      label: `${s.icon} ${s.name}`,
+      desc: `Bonus skill: ${s.bonus}`,
+      action: () => {
+        G.sector = s;
+        G.skills[s.bonus] += 2;
+        log(`Založil jsi ${G.company} v sektoru ${s.icon} ${s.name}. Let's go.`, 'milestone');
+        log('Máš 50 000 Kč, notebook a vizi. Každý měsíc máš omezenou energii – vyber akce moudře.', 'info');
+        closeModal();
+        render();
+      }
+    })));
+  }, 600);
+}
+
+function nextMonth() {
+  // Process monthly effects
+  G.month++;
+  G.energy = G.maxEnergy;
+  
+  // Team effects
+  G.team.forEach(m => {
+    if (m.skill === 'coding') { G.product = Math.min(100, G.product + rand(3, 6)); }
+    if (m.skill === 'sales') { const r = rand(5, 15) * G.pmf; G.cash += r; G.totalRevenue += r; G.users += rand(1, 5); }
+    if (m.skill === 'design') { G.product = Math.min(100, G.product + rand(2, 4)); G.pmf = Math.min(100, G.pmf + rand(1, 3)); }
+    if (m.skill === 'marketing') { G.hype = Math.min(100, G.hype + rand(3, 6)); G.users += Math.floor(G.hype * rand(1, 5)); }
+  });
+  
+  // Burn
+  G.cash -= G.burn;
+  
+  // Organic growth
+  if (G.launched) {
+    const organic = Math.floor(G.users * (0.02 + G.hype / 1000 + G.pmf / 500));
+    G.users += organic;
+    // Revenue from users
+    const mrr = Math.floor(G.users * G.pmf / 100 * rand(1, 5));
+    G.cash += mrr;
+    G.totalRevenue += mrr;
+  }
+  
+  // Hype decay
+  G.hype = Math.max(0, G.hype - rand(2, 5));
+  
+  // Random events
+  RANDOM_EVENTS.forEach(evt => {
+    if (Math.random() < evt.chance) {
+      evt.effect(G);
+      log(evt.text, evt.type === 'good' ? 'good' : 'bad');
+    }
+  });
+  
+  // Milestone checks
+  MILESTONE_CHECKS.forEach(m => {
+    if (!G.milestones.includes(m.id) && m.check(G)) {
+      G.milestones.push(m.id);
+      log(`🏆 MILNÍK: ${m.label}`, 'milestone');
+    }
+  });
+  
+  // Check game over
+  if (G.cash < -50000) {
+    gameOver('bankrupt');
+    return;
+  }
+  if (G.month > G.maxMonths) {
+    gameOver('end');
+    return;
+  }
+  
+  log(`--- Měsíc ${G.month} ---`, 'info');
+  render();
+}
+
+function gameOver(reason) {
+  const val = calcValuation();
+  const el = document.getElementById('gameover');
+  const title = document.getElementById('goTitle');
+  const stats = document.getElementById('goStats');
+  
+  let grade = 'F';
+  if (val > 50000000) grade = 'S';
+  else if (val > 20000000) grade = 'A';
+  else if (val > 5000000) grade = 'B';
+  else if (val > 1000000) grade = 'C';
+  else if (val > 200000) grade = 'D';
+  
+  if (reason === 'bankrupt') {
+    title.textContent = '💀 BANKROT';
+    title.style.color = 'var(--red)';
+  } else {
+    title.textContent = grade === 'S' ? '🦄 UNICORN!' : grade === 'A' ? '🚀 EXIT!' : `📊 Hodnocení: ${grade}`;
+    title.style.color = grade <= 'B' ? 'var(--green)' : 'var(--yellow)';
+  }
+  
+  stats.innerHTML = `
+    <p>Firma: <span>${G.company}</span> (${G.sector?.name || '?'})</p>
+    <p>Finální valuace: <span>${fmt(val)} Kč</span></p>
+    <p>Cash: <span>${fmt(G.cash)} Kč</span></p>
+    <p>Users: <span>${G.users.toLocaleString('cs')}</span></p>
+    <p>Revenue celkem: <span>${fmt(G.totalRevenue)} Kč</span></p>
+    <p>Investice získáno: <span>${fmt(G.raised)} Kč</span></p>
+    <p>Pivotů: <span>${G.pivots}</span></p>
+    <p>Milníků: <span>${G.milestones.length} / ${MILESTONE_CHECKS.length}</span></p>
+    <p>Tým: <span>${G.team.length} lidí</span></p>
+    <p>Grade: <span style="font-size:2rem">${grade}</span></p>
+  `;
+  el.classList.add('active');
+}
+
+function calcValuation() {
+  return Math.floor(
+    G.users * 50 +
+    G.totalRevenue * 3 +
+    G.product * 1000 +
+    G.pmf * 2000 +
+    G.hype * 500 +
+    G.rep * 300 +
+    G.team.length * 50000 +
+    (G.launched ? 200000 : 0) +
+    G.cash * 0.5
+  );
+}
+
+// ============== UI ==============
+function render() {
+  // Stats
+  document.getElementById('monthDisplay').textContent = `Měsíc ${G.month} / ${G.maxMonths}`;
+  document.getElementById('cashDisplay').textContent = fmt(G.cash) + ' Kč';
+  document.getElementById('cashDisplay').style.color = G.cash < 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('burnDisplay').textContent = fmt(G.burn) + ' Kč';
+  document.getElementById('usersDisplay').textContent = G.users.toLocaleString('cs');
+  document.getElementById('energyDisplay').textContent = `${G.energy}/${G.maxEnergy}`;
+  document.getElementById('repDisplay').textContent = G.rep;
+  
+  // Progress bars
+  document.getElementById('productBar').style.width = G.product + '%';
+  document.getElementById('productPct').textContent = Math.floor(G.product) + '%';
+  document.getElementById('pmfBar').style.width = G.pmf + '%';
+  document.getElementById('pmfPct').textContent = Math.floor(G.pmf) + '%';
+  document.getElementById('hypeBar').style.width = G.hype + '%';
+  document.getElementById('hypePct').textContent = Math.floor(G.hype) + '%';
+  
+  // Skills
+  const sg = document.getElementById('skillGrid');
+  sg.innerHTML = Object.entries(G.skills).map(([k, v]) =>
+    `<div class="skill-item"><span>${skillIcon(k)} ${k}</span><span>${v.toFixed(1)}</span></div>`
+  ).join('');
+  
+  // Team
+  const tl = document.getElementById('teamList');
+  if (G.team.length === 0) {
+    tl.innerHTML = '<div style="font-size:0.8rem;color:var(--muted)">Solo founder...</div>';
+  } else {
+    tl.innerHTML = G.team.map(m =>
+      `<div class="team-member"><span>${roleIcon(m.role)}</span><div><div>${m.role}</div><div class="role">${fmt(m.salary)} Kč/měs</div></div></div>`
+    ).join('');
+  }
+  
+  // Milestones
+  const ml = document.getElementById('milestoneList');
+  if (G.milestones.length > 0) {
+    ml.innerHTML = G.milestones.map(id => {
+      const m = MILESTONE_CHECKS.find(x => x.id === id);
+      return `<div style="margin-bottom:4px">${m.label}</div>`;
+    }).join('');
+  }
+  
+  // Actions
+  const al = document.getElementById('actionList');
+  al.innerHTML = '';
+  getActions().forEach(a => {
+    const canAfford = a.costType === 'energy' ? G.energy >= a.cost : G.cash >= a.cost;
+    const condMet = a.condition ? a.condition() : true;
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.disabled = !canAfford || !condMet;
+    btn.innerHTML = `
+      <span class="emoji">${a.emoji}</span>
+      <div><div>${a.label}</div><div style="font-size:0.7rem;color:var(--muted)">${a.desc}</div></div>
+      <span class="cost ${a.costType === 'energy' ? 'energy-cost' : ''}">${a.costType === 'energy' ? '⚡' + a.cost : fmt(a.cost) + ' Kč'}</span>
+    `;
+    btn.onclick = () => {
+      const result = a.action();
+      if (result !== false) {
+        if (a.costType === 'energy') G.energy -= a.cost;
+      }
+      render();
+    };
+    al.appendChild(btn);
+  });
+}
+
+function log(text, type = 'info') {
+  const el = document.getElementById('eventLog');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<div class="time">Měsíc ${G.month}</div>${text}`;
+  el.insertBefore(entry, el.firstChild);
+}
+
+function showModal(title, choices) {
+  const m = document.getElementById('modalContent');
+  m.innerHTML = `<h3>${title}</h3>` + choices.map((c, i) =>
+    `<div class="modal-choice" onclick="modalChoices[${i}]()"}>
+      <div class="label">${c.label}</div>
+      <div class="desc">${c.desc}</div>
+    </div>`
+  ).join('');
+  window.modalChoices = choices.map(c => c.action);
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// Helpers
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fmt(n) { return Math.floor(n).toLocaleString('cs'); }
+function skillIcon(s) { return { coding: '💻', sales: '📞', marketing: '📱', leadership: '🧑‍💼', networking: '🤝', design: '🎨' }[s] || ''; }
+function roleIcon(r) { return { Developer: '👨‍💻', Sales: '📈', Designer: '🎨', Marketer: '📱', COO: '🧑‍💼' }[r] || '👤'; }
+
+// Click outside modal to close
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+</script>
+</body>
+</html>

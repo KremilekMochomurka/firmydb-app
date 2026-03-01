@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Startup Empire 🚀</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0f; --card: #12121a; --card2: #1a1a25; --accent: #6c5ce7;
+  --accent2: #a29bfe; --green: #00b894; --red: #e17055; --gold: #fdcb6e;
+  --text: #dfe6e9; --muted: #636e72; --border: #2d3436;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+.hidden { display: none !important; }
+
+/* INTRO */
+#intro { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem; }
+#intro h1 { font-size: 3rem; background: linear-gradient(135deg, var(--accent), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+#intro p { color: var(--muted); font-size: 1.1rem; max-width: 500px; margin-bottom: 2rem; }
+#intro .subtitle { color: var(--accent2); font-size: 0.9rem; margin-bottom: 2rem; }
+.btn { padding: 12px 32px; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(108,92,231,0.4); }
+.btn-danger { background: var(--red); color: white; }
+.btn-success { background: var(--green); color: white; }
+.btn-gold { background: var(--gold); color: #000; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-sm { padding: 8px 16px; font-size: 0.85rem; }
+
+/* GAME LAYOUT */
+#game { display: none; }
+.top-bar { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 100; }
+.stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; align-items: center; }
+.stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-size: 1.1rem; font-weight: 700; }
+.stat-value.money { color: var(--green); }
+.stat-value.reputation { color: var(--gold); }
+.stat-value.stress { color: var(--red); }
+
+.main-area { display: grid; grid-template-columns: 280px 1fr 300px; min-height: calc(100vh - 60px); }
+@media (max-width: 900px) { .main-area { grid-template-columns: 1fr; } }
+
+/* LEFT PANEL */
+.left-panel { background: var(--card); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+.panel-title { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.team-member { background: var(--card2); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--accent); }
+.team-member .name { font-weight: 600; font-size: 0.9rem; }
+.team-member .role { font-size: 0.75rem; color: var(--accent2); }
+.team-member .skill-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+.team-member .skill-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+.product-card { background: var(--card2); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+.product-card .pname { font-weight: 600; }
+.product-card .pstage { font-size: 0.75rem; color: var(--gold); }
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.progress-fill.dev { background: var(--accent); }
+.progress-fill.market { background: var(--green); }
+
+/* CENTER */
+.center-panel { padding: 24px; overflow-y: auto; max-height: calc(100vh - 60px); }
+.event-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.event-card h3 { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.event-card p { color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice-btn { background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; font-size: 0.9rem; }
+.choice-btn:hover { border-color: var(--accent); background: rgba(108,92,231,0.1); transform: translateX(4px); }
+.choice-btn .choice-cost { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+/* RIGHT PANEL - LOG */
+.right-panel { background: var(--card); border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; max-height: calc(100vh - 60px); }
+.log-entry { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); }
+.log-entry .log-turn { color: var(--accent2); font-weight: 600; }
+.log-entry.positive { color: var(--green); }
+.log-entry.negative { color: var(--red); }
+.log-entry.gold { color: var(--gold); }
+
+/* MODALS */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; animation: slideIn 0.3s ease; text-align: center; }
+.modal h2 { margin-bottom: 12px; }
+.modal p { color: var(--muted); margin-bottom: 20px; }
+
+/* MARKET */
+.market-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+.market-item { background: var(--card2); border-radius: 8px; padding: 12px; text-align: center; }
+.market-item .price { color: var(--green); font-weight: 700; font-size: 1.2rem; }
+
+/* ENDING */
+#ending { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem; }
+#ending h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+.final-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0; }
+.final-stat { background: var(--card); border-radius: 12px; padding: 16px; }
+.final-stat .fs-label { font-size: 0.8rem; color: var(--muted); }
+.final-stat .fs-value { font-size: 1.5rem; font-weight: 700; }
+
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; background: var(--card2); color: var(--muted); border: none; transition: all 0.2s; }
+.tab.active { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+
+<!-- INTRO SCREEN -->
+<div id="intro">
+  <h1>🚀 Startup Empire</h1>
+  <p>Od garáže k IPO. Buduj, najímej, vyjednávej, přežij. Každé rozhodnutí má důsledky.</p>
+  <div class="subtitle">Strategická hra • 50 kol • Tvoje firma, tvoje pravidla</div>
+  <button class="btn btn-primary" onclick="startGame()">Začít hru</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game">
+  <div class="top-bar">
+    <div class="stats">
+      <div class="stat"><span class="stat-label">Kolo</span><span class="stat-value" id="s-turn">1/50</span></div>
+      <div class="stat"><span class="stat-label">Cash</span><span class="stat-value money" id="s-money">100K</span></div>
+      <div class="stat"><span class="stat-label">MRR</span><span class="stat-value money" id="s-mrr">0</span></div>
+      <div class="stat"><span class="stat-label">Uživatelé</span><span class="stat-value" id="s-users">0</span></div>
+      <div class="stat"><span class="stat-label">Reputace</span><span class="stat-value reputation" id="s-rep">50</span></div>
+      <div class="stat"><span class="stat-label">Stres</span><span class="stat-value stress" id="s-stress">10</span></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm btn-primary" onclick="openShop()">🛒 Obchod</button>
+      <button class="btn btn-sm btn-gold" onclick="openInvestors()">💰 Investoři</button>
+    </div>
+  </div>
+  <div class="main-area">
+    <div class="left-panel">
+      <div class="panel-title">👥 Tým</div>
+      <div id="team-list"></div>
+      <div class="panel-title" style="margin-top:16px;">📦 Produkty</div>
+      <div id="product-list"></div>
+    </div>
+    <div class="center-panel" id="center"></div>
+    <div class="right-panel">
+      <div class="panel-title">📜 Log</div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENDING SCREEN -->
+<div id="ending">
+  <h1 id="end-title"></h1>
+  <p id="end-desc"></p>
+  <div class="final-stats" id="final-stats"></div>
+  <button class="btn btn-primary" onclick="location.reload()">Hrát znovu</button>
+</div>
+
+<script>
+// === GAME STATE ===
+let G = {};
+const NAMES_CZ = ["Tomáš","Jakub","Lucie","Petra","Martin","Ondřej","Kateřina","David","Eliška","Filip","Tereza","Adam","Barbora","Marek","Simona","Vojtěch","Nikola","Radek","Jana","Pavel"];
+const SURNAMES = ["Novák","Svoboda","Dvořák","Černý","Procházka","Kučera","Veselý","Horák","Němec","Pokorný","Marek","Pospíšil","Hájek","Král","Jelínek","Růžička","Beneš","Fiala","Sedláček","Kolář"];
+const ROLES = [
+  {name:"Developer",icon:"💻",costBase:25},
+  {name:"Designer",icon:"🎨",costBase:20},
+  {name:"Marketer",icon:"📢",costBase:20},
+  {name:"Sales",icon:"🤝",costBase:22},
+  {name:"CTO",icon:"🧠",costBase:40},
+  {name:"HR",icon:"👔",costBase:18}
+];
+const PRODUCT_STAGES = ["Koncept","MVP","Beta","Launch","Scale","Mature"];
+
+function rng(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function pick(arr){return arr[rng(0,arr.length-1)];}
+function fmt(n){if(n>=1e6)return (n/1e6).toFixed(1)+"M";if(n>=1e3)return (n/1e3).toFixed(0)+"K";return n.toString();}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function initGame(){
+  G = {
+    turn:1, maxTurn:50, money:100000, mrr:0, users:0, reputation:50, stress:10,
+    team:[], products:[], log:[], investments:0, totalRevenue:0, totalSpent:0,
+    techDebt:0, pivots:0, failedProducts:0, successProducts:0,
+    eventQueue:[], currentEvent:null, marketTrend: 1.0,
+    perks:[], monthlyExpenses:0
+  };
+  // Start with one product idea
+  G.products.push({name:pickProductName(), stage:0, progress:0, quality:50, users:0, mrr:0, marketing:0});
+}
+
+function pickProductName(){
+  const prefixes=["AI","Cloud","Smart","Crypto","Nano","Hyper","Meta","Quantum","Pixel","Data"];
+  const suffixes=["Flow","Hub","Mind","Forge","Sync","Pulse","Wave","Stack","Lens","Core"];
+  return pick(prefixes)+pick(suffixes);
+}
+
+function generatePerson(){
+  return {
+    name: pick(NAMES_CZ)+" "+pick(SURNAMES),
+    role: pick(ROLES),
+    skill: rng(30,90),
+    morale: rng(60,100),
+    salary: 0,
+    hired: G.turn
+  };
+}
+
+// === EVENTS ===
+const EVENTS = [
+  // BUSINESS
+  {
+    title:"🤝 Velký klient na obzoru",
+    desc:"Korporát chce tvůj produkt. Ale chtějí custom features za 3 měsíce.",
+    choices:[
+      {text:"Přijmout – peníze za custom práci", cost:"Stres +15, Tech Debt +20", fn:g=>{g.money+=80000;g.stress+=15;g.techDebt+=20;g.totalRevenue+=80000;return"+80K CZK, ale stress a tech debt rostou";}},
+      {text:"Odmítnout – zůstat u vlastní vize", cost:"Reputace +10", fn:g=>{g.reputation+=10;return"Reputace +10, zůstáváš věrný vizi";}},
+      {text:"Vyjednat lepší podmínky", cost:"50/50 šance", fn:g=>{if(Math.random()>0.5){g.money+=120000;g.reputation+=5;g.totalRevenue+=120000;return"Hustle! +120K a respekt";}else{g.reputation-=5;g.stress+=10;return"Odmítli tě. Reputace -5, Stres +10";}}}
+    ]
+  },
+  {
+    title:"🐛 Kritický bug v produkci",
+    desc:"Hlavní produkt padá. Uživatelé jsou naštvaní. Twitter hoří.",
+    choices:[
+      {text:"All-hands fix (noční směna)", cost:"Stres +20, rychlá oprava", fn:g=>{g.stress+=20;if(g.products[0])g.products[0].quality+=10;return"Opraveno! Tým je vyčerpaný ale produkt je stabilnější.";}},
+      {text:"Najmi externího experta", cost:"-30K CZK", fn:g=>{g.money-=30000;g.totalSpent+=30000;if(g.products[0])g.products[0].quality+=15;return"Expert to vyřešil. -30K ale kvalita +15.";}},
+      {text:"Komunikuj transparentně a fix postupně", cost:"Reputace +5, Uživatelé -10%", fn:g=>{g.reputation+=5;g.users=Math.floor(g.users*0.9);return"Lidi ocenili upřímnost. Někteří odešli, ale máš respekt.";}}
+    ]
+  },
+  {
+    title:"💡 Pivotovat?",
+    desc:"Data ukazují, že uživatelé používají tvůj produkt úplně jinak, než jsi plánoval.",
+    choices:[
+      {text:"Pivot – následuj uživatele", cost:"-20K, produkt se resetuje na MVP", fn:g=>{g.money-=20000;g.pivots++;if(g.products[0]){g.products[0].stage=1;g.products[0].progress=0;g.products[0].quality+=20;}return"Pivot! Zpět na MVP, ale s lepší kvalitou.";}},
+      {text:"Zůstat u původního plánu", cost:"Riskuješ stagnaci", fn:g=>{if(Math.random()>0.6){g.users+=rng(50,200);return"Tvoje vize se vyplatila. Uživatelé přicházejí.";}else{g.users=Math.max(0,g.users-rng(20,100));return"Trh ti nerozumí. Uživatelé odcházejí.";}}}
+    ]
+  },
+  {
+    title:"🎤 Pozvánka na konferenci",
+    desc:"StartupSummit tě zve jako řečníka. 500 lidí v publiku.",
+    choices:[
+      {text:"Jít a dát killer talk", cost:"Stres +10, Reputace +15", fn:g=>{g.stress+=10;g.reputation+=15;g.users+=rng(100,500);return"Standing ovation! Reputace a uživatelé rostou.";}},
+      {text:"Poslat někoho z týmu", cost:"Reputace +5", fn:g=>{g.reputation+=5;if(g.team.length>0)g.team[0].morale+=10;return"Tým to zvládl solid. Menší dopad, ale bez stresu.";}},
+      {text:"Odmítnout – focus na produkt", cost:"Nic", fn:g=>{if(g.products[0])g.products[0].progress+=15;return"Fokus na práci. Produkt jde dopředu.";}}
+    ]
+  },
+  {
+    title:"🏦 Banka nabízí úvěr",
+    desc:"500K CZK za 8% úrok. Peníze na stole.",
+    choices:[
+      {text:"Vzít úvěr", cost:"+500K ale měsíční splátky 15K", fn:g=>{g.money+=500000;g.monthlyExpenses+=15000;return"+500K na účtu! Splátky 15K/měsíc.";}},
+      {text:"Odmítnout – bootstrapuj dál", cost:"Žádný dluh", fn:g=>{g.reputation+=3;return"Žádné dluhy. Respekt za disciplínu.";}}
+    ]
+  },
+  {
+    title:"🧑‍💻 Klíčový developer chce odejít",
+    desc:"Tvůj nejlepší programátor dostal nabídku od Googlu. Chce +50% platu.",
+    choices:[
+      {text:"Přidej mu – je nenahraditelný", cost:"Plat +50%", fn:g=>{if(g.team.length>0){let d=g.team.find(t=>t.role.name==="Developer")||g.team[0];d.salary=Math.floor(d.salary*1.5);d.morale=100;return d.name+" zůstává. Plat vyskočil.";}return"Nemáš nikoho v týmu.";}},
+      {text:"Nech ho jít – nikdo není nenahraditelný", cost:"Ztráta člena, Tech Debt +15", fn:g=>{if(g.team.length>0){let idx=g.team.findIndex(t=>t.role.name==="Developer");if(idx<0)idx=0;let n=g.team[idx].name;g.team.splice(idx,1);g.techDebt+=15;return n+" odešel. Tech debt roste.";}return"Nemáš nikoho v týmu.";}},
+      {text:"Nabídni equity místo peněz", cost:"Sdílíš vlastnictví", fn:g=>{if(g.team.length>0){let d=g.team.find(t=>t.role.name==="Developer")||g.team[0];d.morale=90;d.skill+=10;return d.name+" přijal equity. Motivovanější než kdy dřív.";}return"Nemáš nikoho v týmu.";}}
+    ]
+  },
+  {
+    title:"📱 Virální moment",
+    desc:"Někdo udělal meme s tvým produktem. TikTok exploduje.",
+    choices:[
+      {text:"Skočit na vlnu – marketing push!", cost:"-40K CZK", fn:g=>{g.money-=40000;g.totalSpent+=40000;g.users+=rng(1000,5000);g.mrr+=rng(5000,20000);return"Viral wave! Masivní růst uživatelů a MRR!";}},
+      {text:"Nechat to organicky", cost:"Nic", fn:g=>{g.users+=rng(200,800);return"Organický růst. Menší, ale stabilní.";}},
+      {text:"Využít to pro PR", cost:"Reputace +10", fn:g=>{g.reputation+=10;g.users+=rng(500,1500);return"Média to vzala. Reputace a uživatelé rostou.";}}
+    ]
+  },
+  {
+    title:"⚖️ Regulace přichází",
+    desc:"EU zavádí novou regulaci, která přímo ovlivňuje tvůj produkt.",
+    choices:[
+      {text:"Compliance first – investuj do právníků", cost:"-60K CZK, Reputace +10", fn:g=>{g.money-=60000;g.totalSpent+=60000;g.reputation+=10;return"Plně compliant. Konkurence závidí.";}},
+      {text:"Počkej a uvidíš", cost:"Risk", fn:g=>{if(Math.random()>0.4){return"Regulace se zmírnila. Ušetřil jsi.";}else{g.money-=100000;g.reputation-=15;return"Pokuta -100K a reputace -15!";}}},
+      {text:"Pivot na jiný trh", cost:"Produkt reset", fn:g=>{if(g.products[0]){g.products[0].stage=Math.max(0,g.products[0].stage-1);g.products[0].users=0;}g.stress+=10;return"Pivot na neregulovaný trh. Stresové ale chytré.";}}
+    ]
+  },
+  {
+    title:"🏢 Konkurent kopíruje tvůj produkt",
+    desc:"Velká firma s 10× tvým budgetem spustila klon tvého produktu.",
+    choices:[
+      {text:"Inovuj rychleji – double down na R&D", cost:"-50K, Stres +15", fn:g=>{g.money-=50000;g.stress+=15;if(g.products[0]){g.products[0].quality+=25;g.products[0].progress+=20;}return"Inovace na steroidech. Kvalita +25!";}},
+      {text:"Diferenciuj se – najdi niche", cost:"Reputace +10", fn:g=>{g.reputation+=10;g.users+=rng(100,400);return"Našel jsi svou niche. Loajální uživatelé přicházejí.";}},
+      {text:"Spolupracuj – nabídni partnerství", cost:"50/50", fn:g=>{if(Math.random()>0.5){g.money+=200000;g.totalRevenue+=200000;g.reputation+=20;return"Deal! +200K a masivní exposure!";}else{g.reputation-=10;return"Odmítli tě a ukradli ti dalšího zákazníka.";}}}
+    ]
+  },
+  {
+    title:"🔥 Burnout klepá na dveře",
+    desc:"Tři týdny bez volna. Tým je na hraně. Ty taky.",
+    choices:[
+      {text:"Team retreat – den volna pro všechny", cost:"-20K, Stres -25", fn:g=>{g.money-=20000;g.stress=Math.max(0,g.stress-25);g.team.forEach(t=>t.morale=Math.min(100,t.morale+20));return"Reset! Tým je zpátky v plné síle.";}},
+      {text:"Push through – sleep is for the weak", cost:"Stres +20, Risk", fn:g=>{g.stress+=20;if(g.stress>80){g.team.forEach(t=>t.morale=Math.max(10,t.morale-30));return"Tým se hroutí. Morálka na dně.";}else{if(g.products[0])g.products[0].progress+=25;return"Hustlers. Produkt letí dopředu."}}},
+      {text:"Najmi víc lidí na rozložení zátěže", cost:"Potřebuješ lidi", fn:g=>{let p=generatePerson();p.salary=p.role.costBase*1000;g.team.push(p);g.stress=Math.max(0,g.stress-10);return"Nový člen "+p.name+" ("+p.role.name+"). Stres -10.";}}
+    ]
+  },
+  {
+    title:"🎯 Product Hunt launch",
+    desc:"Tvůj produkt je ready na Product Hunt. Timing je klíčový.",
+    choices:[
+      {text:"Launch TEĎKA – full send!", cost:"Stres +10", fn:g=>{g.stress+=10;let r=rng(1,5);if(r>=4){g.users+=rng(2000,8000);g.mrr+=rng(10000,40000);g.reputation+=20;return"🏆 #1 Product of the Day! Masivní win!";}else if(r>=2){g.users+=rng(500,1500);g.mrr+=rng(3000,10000);return"Solid launch. Top 5. Uživatelé přicházejí.";}else{g.users+=rng(50,200);return"Flop. Špatný timing. Minimum trakce.";}}},
+      {text:"Počkej a vylepši produkt", cost:"Čas", fn:g=>{if(g.products[0])g.products[0].quality+=15;return"Kvalita +15. Launch příště bude silnější.";}},
+      {text:"Najmi PH konzultanta", cost:"-25K", fn:g=>{g.money-=25000;g.users+=rng(1000,4000);g.mrr+=rng(5000,20000);g.reputation+=10;return"Konzultant zná hru. Solid výsledky.";}}
+    ]
+  },
+  {
+    title:"💰 Angel investor chce mluvit",
+    desc:"Známý český angel ti napsal na LinkedIn. Má zájem investovat.",
+    choices:[
+      {text:"Pitch meeting – jdi na to", cost:"Stres +5", fn:g=>{g.stress+=5;if(g.reputation>60&&Math.random()>0.3){let amount=rng(200,800)*1000;g.money+=amount;g.investments++;g.totalRevenue+=amount;return"Deal! +"+fmt(amount)+" investice! 🎉";}else{return"Pitch nepřesvědčil. Říká 'vrať se za 6 měsíců.'"}}},
+      {text:"Pošli deck a čekej", cost:"Nic", fn:g=>{if(Math.random()>0.5){g.money+=150000;g.investments++;return"Deck ho zaujal. +150K seed.";}else{return"Ghostnul tě. Classic angel behavior.";}}},
+      {text:"Odmítni – nechceš ředit", cost:"Reputace +5", fn:g=>{g.reputation+=5;return"Bootstrap mentality. Respekt od komunity.";}}
+    ]
+  },
+  {
+    title:"🧪 Nová technologie na trhu",
+    desc:"Vyšel nový AI framework, který by mohl 10× zrychlit vývoj.",
+    choices:[
+      {text:"Přepiš vše do nového stacku", cost:"-40K, Tech Debt -20, Risk", fn:g=>{g.money-=40000;g.techDebt=Math.max(0,g.techDebt-20);if(Math.random()>0.4){if(g.products[0])g.products[0].quality+=20;return"Migrace úspěšná! Produkt je 10× rychlejší.";}else{g.stress+=15;return"Migrace se zkomplikovala. Stres +15.";}}},
+      {text:"Postupná adopce", cost:"Bezpečné", fn:g=>{g.techDebt=Math.max(0,g.techDebt-5);if(g.products[0])g.products[0].quality+=5;return"Postupně přecházíš. Stabilní přístup.";}},
+      {text:"Ignoruj – what works works", cost:"Tech Debt +5", fn:g=>{g.techDebt+=5;return"Status quo. Tech debt tiká.";}}
+    ]
+  },
+  {
+    title:"📰 Novinář chce rozhovor",
+    desc:"Forbes 30 under 30 zvažuje tvou nominaci. Chtějí příběh.",
+    choices:[
+      {text:"Otevři se – řekni všechno", cost:"Reputace +20, Risk", fn:g=>{g.reputation+=20;g.users+=rng(500,2000);if(Math.random()>0.8){g.stress+=10;return"Článek vyšel skvěle! Ale pár trollů na Twitteru.";}return"🌟 Forbes feature! Reputace a uživatelé explodují!";}},
+      {text:"Kontrolovaný PR message", cost:"Reputace +10", fn:g=>{g.reputation+=10;g.users+=rng(200,800);return"Profesionální článek. Solidní exposure.";}},
+      {text:"Odmítni – let the work speak", cost:"Nic", fn:g=>{return"Ticho. Možná příště.";}}
+    ]
+  },
+  {
+    title:"🌍 Expanze do zahraničí?",
+    desc:"Poptávka z Německa roste. Ale lokalizace stojí.",
+    choices:[
+      {text:"Go global! Investuj do lokalizace", cost:"-80K", fn:g=>{g.money-=80000;g.totalSpent+=80000;g.users+=rng(1000,5000);g.mrr+=rng(10000,30000);g.reputation+=10;return"Německý trh otevřen! Masivní růst.";}},
+      {text:"Partnerství s lokální firmou", cost:"-30K", fn:g=>{g.money-=30000;g.users+=rng(500,2000);g.mrr+=rng(5000,15000);return"Partner řeší lokalizaci. Win-win.";}},
+      {text:"Focus na ČR zatím", cost:"Nic", fn:g=>{return"Domácí trh first. Chytrá strategie pro teď.";}}
+    ]
+  },
+  {
+    title:"🎲 Crypto opportunity",
+    desc:"Kamarád říká, že nový token 100× za měsíc. FOMO is real.",
+    choices:[
+      {text:"YOLO – investuj 100K", cost:"-100K, Gamble", fn:g=>{g.money-=100000;if(Math.random()>0.8){g.money+=500000;return"🚀 5× návratnost! +400K čistého!";}else{return"Rug pull. -100K pryč. Lesson learned.";}}},
+      {text:"Malá pozice – 20K", cost:"-20K", fn:g=>{g.money-=20000;if(Math.random()>0.6){g.money+=60000;return"Slušný gain! +40K čistého.";}else{return"-20K. Mohlo být hůř.";}}},
+      {text:"Nope – focus na byznys", cost:"Nic", fn:g=>{g.reputation+=3;return"Disciplína. Tvoje firma > shitcoiny.";}}
+    ]
+  },
+  {
+    title:"👥 Akvizice nabídka",
+    desc:"Velká firma chce koupit tvůj produkt. Nabízejí zajímavou částku.",
+    choices:[
+      {text:"Prodej – cash out", cost:"Záleží na stavu", fn:g=>{let val=(g.users*50)+(g.mrr*12)+g.reputation*1000;g.money+=val;g.totalRevenue+=val;if(g.products.length>0)g.products[0].stage=5;return"Prodáno za "+fmt(val)+"! 💰";}},
+      {text:"Odmítni – tohle je teprve začátek", cost:"Reputace +15", fn:g=>{g.reputation+=15;return"'Tohle se neprodává.' Legenda move.";}},
+      {text:"Vyjednávej vyšší cenu", cost:"50/50", fn:g=>{if(Math.random()>0.5){let val=Math.floor(((g.users*50)+(g.mrr*12)+g.reputation*1000)*1.5);g.money+=val;g.totalRevenue+=val;return"Counter-offer přijat! "+fmt(val)+"! 🔥";}else{g.reputation-=5;return"Stáhli nabídku. Přestřelil jsi.";}}},
+    ]
+  },
+  {
+    title:"🛡️ Bezpečnostní incident",
+    desc:"Etický hacker našel zranitelnost. Zatím to ví jen on.",
+    choices:[
+      {text:"Bug bounty – zaplať a oprav", cost:"-50K, Reputace +15", fn:g=>{g.money-=50000;g.reputation+=15;if(g.products[0])g.products[0].quality+=10;return"Opraveno. Hacker dostal odměnu. Komunita respektuje.";}},
+      {text:"Oprav potichu", cost:"Risk", fn:g=>{if(Math.random()>0.3){if(g.products[0])g.products[0].quality+=5;return"Opraveno v tichosti. Nikdo neví.";}else{g.reputation-=20;g.users=Math.floor(g.users*0.7);return"Leak! Média to zjistily. Katastrofa.";}}},
+      {text:"Najmi ho do týmu", cost:"Plat", fn:g=>{let p={name:"White Hat Hacker",role:{name:"Developer",icon:"🛡️",costBase:35},skill:85,morale:90,salary:35000,hired:G.turn};g.team.push(p);return"Security expert v týmu. Produkt je fortress.";}}
+    ]
+  }
+];
+
+// More lightweight random events
+const MICRO_EVENTS = [
+  {title:"📈 Dobrý měsíc",desc:"Organic growth přinesl nové uživatele.",fn:g=>{let u=rng(50,300);g.users+=u;return"+"+ u+" uživatelů organicky.";}},
+  {title:"📉 Churn wave",desc:"Část uživatelů odešla ke konkurenci.",fn:g=>{let u=rng(20,150);g.users=Math.max(0,g.users-u);return"-"+u+" uživatelů. Ouch.";}},
+  {title:"🌟 Dobrá recenze",desc:"Influencer zmínil tvůj produkt.",fn:g=>{g.reputation+=rng(3,8);g.users+=rng(100,500);return"Pozitivní buzz!";}},
+  {title:"💸 Neočekávaný výdaj",desc:"Server costs vyskočily.",fn:g=>{let c=rng(10,40)*1000;g.money-=c;g.totalSpent+=c;return"-"+fmt(c)+" na infrastrukturu.";}},
+  {title:"🎉 Milestone!",desc:"Tým slaví malé vítězství.",fn:g=>{g.team.forEach(t=>t.morale=Math.min(100,t.morale+5));g.stress=Math.max(0,g.stress-5);return"Good vibes. Morálka a stres se zlepšily.";}},
+  {title:"📧 Spam od investorů",desc:"10 cold emails od VC fondů.",fn:g=>{return"Ignoruješ. Ale je fajn vědět, že o tobě vědí.";}},
+  {title:"🤖 AI hype cycle",desc:"Tvůj sektor je trending.",fn:g=>{g.marketTrend=Math.min(2.0,g.marketTrend+0.2);g.users+=rng(100,800);return"Rising tide lifts all boats. Market trend up!";}},
+];
+
+function getEvent(){
+  // 60% main event, 40% micro
+  if(Math.random()>0.4 || G.turn<=3){
+    return {...pick(EVENTS)};
+  } else {
+    let me = pick(MICRO_EVENTS);
+    return {title:me.title, desc:me.desc, choices:[{text:"OK",cost:"",fn:me.fn}]};
+  }
+}
+
+// === RENDERING ===
+function updateStats(){
+  document.getElementById('s-turn').textContent = G.turn+"/"+G.maxTurn;
+  document.getElementById('s-money').textContent = fmt(G.money);
+  document.getElementById('s-mrr').textContent = fmt(G.mrr);
+  document.getElementById('s-users').textContent = fmt(G.users);
+  document.getElementById('s-rep').textContent = G.reputation;
+  document.getElementById('s-stress').textContent = G.stress;
+}
+
+function renderTeam(){
+  let html = '';
+  if(G.team.length===0) html='<div style="color:var(--muted);font-size:0.8rem;padding:8px;">Zatím žádný tým. Najmi lidi v obchodě!</div>';
+  G.team.forEach((m,i)=>{
+    html+=`<div class="team-member">
+      <div class="name">${m.role.icon} ${m.name}</div>
+      <div class="role">${m.role.name} • ${fmt(m.salary)}/měs • Morálka: ${m.morale}%</div>
+      <div class="skill-bar"><div class="skill-fill" style="width:${m.skill}%"></div></div>
+    </div>`;
+  });
+  document.getElementById('team-list').innerHTML=html;
+}
+
+function renderProducts(){
+  let html='';
+  G.products.forEach((p,i)=>{
+    let stagePercent = (p.stage/5)*100;
+    html+=`<div class="product-card">
+      <div class="pname">${p.name}</div>
+      <div class="pstage">${PRODUCT_STAGES[p.stage]} • Kvalita: ${p.quality} • ${fmt(p.users)} uživatelů</div>
+      <div class="progress-bar"><div class="progress-fill dev" style="width:${Math.min(100,p.progress)}%"></div></div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">MRR: ${fmt(p.mrr)}</div>
+    </div>`;
+  });
+  document.getElementById('product-list').innerHTML=html;
+}
+
+function addLog(text, type=''){
+  G.log.unshift({turn:G.turn, text, type});
+  let html='';
+  G.log.slice(0,50).forEach(l=>{
+    html+=`<div class="log-entry ${l.type}"><span class="log-turn">K${l.turn}</span> ${l.text}</div>`;
+  });
+  document.getElementById('log').innerHTML=html;
+}
+
+function renderEvent(ev){
+  let html=`<div class="event-card"><h3>${ev.title}</h3><p>${ev.desc}</p><div class="choices">`;
+  ev.choices.forEach((c,i)=>{
+    html+=`<button class="choice-btn" onclick="choose(${i})"><div>${c.text}</div>${c.cost?'<div class="choice-cost">'+c.cost+'</div>':''}</button>`;
+  });
+  html+=`</div></div>`;
+  document.getElementById('center').innerHTML=html;
+}
+
+// === GAME LOGIC ===
+function processMonthly(){
+  // Salary expenses
+  let salaries=0;
+  G.team.forEach(m=>{salaries+=m.salary;});
+  G.money-=salaries;
+  G.money-=G.monthlyExpenses;
+  G.totalSpent+=salaries+G.monthlyExpenses;
+
+  // MRR income
+  G.money+=G.mrr;
+  G.totalRevenue+=G.mrr;
+
+  // Product development
+  G.products.forEach(p=>{
+    let devPower = G.team.filter(t=>t.role.name==="Developer").reduce((s,t)=>s+t.skill*0.3,5);
+    let designPower = G.team.filter(t=>t.role.name==="Designer").reduce((s,t)=>s+t.skill*0.2,0);
+    p.progress += devPower + designPower;
+    if(p.progress>=100 && p.stage<5){
+      p.stage++;
+      p.progress=0;
+      addLog(p.name+" → "+PRODUCT_STAGES[p.stage]+"!", "gold");
+    }
+    // Marketing effect on users
+    let marketPower = G.team.filter(t=>t.role.name==="Marketer").reduce((s,t)=>s+t.skill*0.5,1);
+    let salesPower = G.team.filter(t=>t.role.name==="Sales").reduce((s,t)=>s+t.skill*0.3,0);
+    let newUsers = Math.floor((marketPower+salesPower) * G.marketTrend * (p.stage+1) * (p.quality/50));
+    p.users += newUsers;
+    G.users += newUsers;
+    // MRR from users
+    let mrrGrowth = Math.floor(p.users * 0.05 * (p.quality/50));
+    p.mrr += mrrGrowth;
+    G.mrr += mrrGrowth;
+  });
+
+  // Stress decay
+  G.stress = Math.max(0, G.stress - 2);
+
+  // Morale decay if stress high
+  if(G.stress > 60){
+    G.team.forEach(t=>t.morale=Math.max(10,t.morale-5));
+  }
+
+  // Tech debt effect
+  if(G.techDebt > 30){
+    G.products.forEach(p=>p.quality=Math.max(10,p.quality-2));
+  }
+
+  // Market trend drift
+  G.marketTrend = clamp(G.marketTrend + (Math.random()-0.5)*0.1, 0.5, 2.0);
+
+  // Random team morale event
+  if(Math.random()>0.8 && G.team.length>0){
+    let m=pick(G.team);
+    m.morale=clamp(m.morale+rng(-10,10),10,100);
+  }
+
+  G.reputation = clamp(G.reputation, 0, 100);
+  G.stress = clamp(G.stress, 0, 100);
+}
+
+function nextTurn(){
+  G.turn++;
+  if(G.turn > G.maxTurn){
+    endGame();
+    return;
+  }
+  if(G.money < -200000){
+    endGame(true);
+    return;
+  }
+  processMonthly();
+  let ev = getEvent();
+  G.currentEvent = ev;
+  renderEvent(ev);
+  updateStats();
+  renderTeam();
+  renderProducts();
+}
+
+function choose(idx){
+  let ev = G.currentEvent;
+  if(!ev) return;
+  let choice = ev.choices[idx];
+  let result = choice.fn(G);
+  addLog(result, result.includes("+")||result.includes("win")||result.includes("!")||result.includes("🏆")?"positive":result.includes("-")||result.includes("Flop")||result.includes("odešl")?"negative":"");
+
+  // Show result then next turn
+  let html=`<div class="event-card"><h3>${ev.title}</h3><p style="color:var(--text);font-size:1.1rem;">${result}</p>
+    <button class="btn btn-primary" onclick="nextTurn()" style="margin-top:16px;">Další kolo →</button></div>`;
+  document.getElementById('center').innerHTML=html;
+  updateStats();
+  renderTeam();
+  renderProducts();
+}
+
+// === SHOP ===
+function openShop(){
+  let candidates = [generatePerson(), generatePerson(), generatePerson()];
+  let html=`<div class="event-card"><h3>🛒 Najímání</h3><p>Vyber nového člena týmu:</p><div class="market-grid">`;
+  candidates.forEach((c,i)=>{
+    c.salary = c.role.costBase * 1000 + rng(-5,10)*1000;
+    html+=`<div class="market-item">
+      <div style="font-size:1.5rem;">${c.role.icon}</div>
+      <div style="font-weight:600;">${c.name}</div>
+      <div style="font-size:0.8rem;color:var(--accent2);">${c.role.name} • Skill: ${c.skill}</div>
+      <div class="price">${fmt(c.salary)}/měs</div>
+      <button class="btn btn-sm btn-success" onclick='hirePerson(${i})' style="margin-top:8px;" ${G.money<c.salary*3?"disabled":""}>Najmout</button>
+    </div>`;
+  });
+  html+=`</div><button class="btn btn-sm" onclick="renderEvent(G.currentEvent)" style="margin-top:12px;background:var(--border);color:var(--text);">Zavřít</button></div>`;
+  document.getElementById('center').innerHTML=html;
+  window._shopCandidates = candidates;
+}
+function hirePerson(i){
+  let p = window._shopCandidates[i];
+  G.team.push(p);
+  addLog("Najat/a: "+p.name+" ("+p.role.name+")", "positive");
+  renderTeam();
+  updateStats();
+  renderEvent(G.currentEvent);
+}
+
+// === INVESTORS ===
+function openInvestors(){
+  let html=`<div class="event-card"><h3>💰 Investoři</h3><p>Tvoje metriky rozhodují o tom, co dostaneš:</p>
+    <div style="margin:16px 0;color:var(--muted);">
+      <div>Reputace: ${G.reputation}/100</div>
+      <div>MRR: ${fmt(G.mrr)}</div>
+      <div>Uživatelé: ${fmt(G.users)}</div>
+      <div>Investiční kola: ${G.investments}</div>
+    </div>`;
+
+  let rounds = [
+    {name:"Pre-seed",req:{rep:20,mrr:0},amount:rng(100,300)*1000},
+    {name:"Seed",req:{rep:40,mrr:5000},amount:rng(500,1500)*1000},
+    {name:"Series A",req:{rep:60,mrr:30000},amount:rng(2000,5000)*1000},
+    {name:"Series B",req:{rep:75,mrr:100000},amount:rng(5000,15000)*1000},
+  ];
+  html+=`<div class="market-grid">`;
+  rounds.forEach((r,i)=>{
+    let eligible = G.reputation>=r.req.rep && G.mrr>=r.req.mrr;
+    html+=`<div class="market-item" style="opacity:${eligible?1:0.4}">
+      <div style="font-weight:600;">${r.name}</div>
+      <div class="price">${fmt(r.amount)}</div>
+      <div style="font-size:0.7rem;color:var(--muted);">Rep ≥${r.req.rep}, MRR ≥${fmt(r.req.mrr)}</div>
+      <button class="btn btn-sm btn-gold" onclick='raiseRound(${i})' style="margin-top:8px;" ${eligible?"":"disabled"}>Raise</button>
+    </div>`;
+  });
+  html+=`</div><button class="btn btn-sm" onclick="renderEvent(G.currentEvent)" style="margin-top:12px;background:var(--border);color:var(--text);">Zavřít</button></div>`;
+  document.getElementById('center').innerHTML=html;
+  window._investorRounds = rounds;
+}
+function raiseRound(i){
+  let r = window._investorRounds[i];
+  if(Math.random()*100 < G.reputation){
+    G.money+=r.amount;G.investments++;G.totalRevenue+=r.amount;
+    addLog(r.name+" raise: +"+fmt(r.amount)+"! 🎉","positive");
+  } else {
+    addLog(r.name+" pitch odmítnut. Zkus to znovu.","negative");
+  }
+  updateStats();
+  openInvestors();
+}
+
+// === END GAME ===
+function endGame(bankrupt=false){
+  document.getElementById('game').style.display='none';
+  document.getElementById('ending').style.display='flex';
+
+  let valuation = (G.mrr * 12 * 8) + (G.users * 30) + (G.reputation * 5000);
+  let grade = valuation > 5000000 ? "S" : valuation > 2000000 ? "A" : valuation > 800000 ? "B" : valuation > 300000 ? "C" : "D";
+
+  if(bankrupt){
+    document.getElementById('end-title').textContent = "💀 Bankrot";
+    document.getElementById('end-desc').textContent = "Došly ti peníze. Ale každý velký founder jednou zkrachoval.";
+  } else if(grade==="S"){
+    document.getElementById('end-title').textContent = "🦄 Unicorn Status!";
+    document.getElementById('end-desc').textContent = "Z garáže k legendě. Forbes tě má na speed dialu.";
+  } else if(grade==="A"){
+    document.getElementById('end-title').textContent = "🚀 Exit s úsměvem";
+    document.getElementById('end-desc').textContent = "Solid byznys, respekt komunity, peníze na účtu. Well played.";
+  } else if(grade==="B"){
+    document.getElementById('end-title').textContent = "📈 Rostoucí startup";
+    document.getElementById('end-desc').textContent = "Ještě nejsi unicorn, ale základ je silný.";
+  } else {
+    document.getElementById('end-title').textContent = "🌱 Startup seedling";
+    document.getElementById('end-desc').textContent = "Naučil ses hodně. Příště to bude jinak.";
+  }
+
+  document.getElementById('final-stats').innerHTML = `
+    <div class="final-stat"><div class="fs-label">Valuace</div><div class="fs-value" style="color:var(--gold)">${fmt(valuation)} CZK</div></div>
+    <div class="final-stat"><div class="fs-label">Grade</div><div class="fs-value" style="color:var(--accent)">${grade}</div></div>
+    <div class="final-stat"><div class="fs-label">Cash</div><div class="fs-value" style="color:var(--green)">${fmt(G.money)}</div></div>
+    <div class="final-stat"><div class="fs-label">MRR</div><div class="fs-value">${fmt(G.mrr)}</div></div>
+    <div class="final-stat"><div class="fs-label">Uživatelé</div><div class="fs-value">${fmt(G.users)}</div></div>
+    <div class="final-stat"><div class="fs-label">Tým</div><div class="fs-value">${G.team.length} lidí</div></div>
+    <div class="final-stat"><div class="fs-label">Investice</div><div class="fs-value">${G.investments} kol</div></div>
+    <div class="final-stat"><div class="fs-label">Reputace</div><div class="fs-value">${G.reputation}/100</div></div>
+    <div class="final-stat"><div class="fs-label">Celk. příjmy</div><div class="fs-value" style="color:var(--green)">${fmt(G.totalRevenue)}</div></div>
+    <div class="final-stat"><div class="fs-label">Celk. výdaje</div><div class="fs-value" style="color:var(--red)">${fmt(G.totalSpent)}</div></div>
+  `;
+}
+
+// === START ===
+function startGame(){
+  initGame();
+  document.getElementById('intro').style.display='none';
+  document.getElementById('game').style.display='block';
+  let ev = getEvent();
+  G.currentEvent = ev;
+  renderEvent(ev);
+  updateStats();
+  renderTeam();
+  renderProducts();
+  addLog("Startup založen! Let's go. 🚀", "positive");
+}
+</script>
+</body>
+</html>

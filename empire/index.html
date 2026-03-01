@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMPIRE — Tech Startup Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;900&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a25;
+  --border: #2a2a3a;
+  --accent: #6c5ce7;
+  --accent2: #a29bfe;
+  --green: #00e676;
+  --red: #ff5252;
+  --gold: #ffd740;
+  --text: #e0e0e0;
+  --dim: #666680;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 4px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+}
+
+.stat { display: flex; align-items: center; gap: 8px; }
+.stat-label { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.stat-value { font-weight: 700; }
+.stat-money { color: var(--green); }
+.stat-rep { color: var(--gold); }
+.stat-week { color: var(--accent2); }
+
+/* Main grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 20px;
+}
+
+/* Panels */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.panel-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--dim);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Company panel */
+.company-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.company-type {
+  font-size: 12px;
+  color: var(--accent2);
+  margin-bottom: 16px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(42,42,58,0.5);
+}
+
+.metric-name { font-size: 13px; color: var(--dim); }
+.metric-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Center area */
+.center-area { display: flex; flex-direction: column; gap: 20px; }
+
+/* Action buttons */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.action-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(108,92,231,0.1);
+  transform: translateY(-2px);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn .icon { font-size: 24px; margin-bottom: 6px; }
+.action-btn .label { font-size: 12px; font-weight: 600; }
+.action-btn .cost { font-size: 11px; color: var(--dim); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+/* Log */
+.log-area {
+  flex: 1;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.log-entry { padding: 2px 0; }
+.log-entry .time { color: var(--dim); margin-right: 8px; }
+.log-good { color: var(--green); }
+.log-bad { color: var(--red); }
+.log-info { color: var(--accent2); }
+.log-gold { color: var(--gold); }
+
+/* Right panel - market/events */
+.event-card {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+
+.event-card.opportunity { border-left-color: var(--gold); }
+.event-card.threat { border-left-color: var(--red); }
+
+.event-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.event-desc { font-size: 11px; color: var(--dim); line-height: 1.5; }
+.event-actions { margin-top: 8px; display: flex; gap: 6px; }
+
+.event-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+
+.event-btn:hover { border-color: var(--accent); }
+.event-btn.primary { background: var(--accent); border-color: var(--accent); }
+
+/* Team member */
+.team-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px;
+}
+.team-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.team-info { flex: 1; }
+.team-name { font-size: 12px; font-weight: 600; }
+.team-role { font-size: 10px; color: var(--dim); }
+.team-skill { font-size: 10px; color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+
+/* Next week button */
+.next-week-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent), #5a4bd1);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+
+.next-week-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(108,92,231,0.4); }
+
+/* Startup screen */
+.startup-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+
+.startup-box {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+}
+
+.startup-box h1 {
+  font-size: 48px; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 6px; margin-bottom: 8px;
+}
+
+.startup-box .tagline { color: var(--dim); font-size: 14px; margin-bottom: 40px; letter-spacing: 2px; }
+
+.startup-input {
+  width: 100%;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 12px;
+  text-align: center;
+  outline: none;
+}
+
+.startup-input:focus { border-color: var(--accent); }
+
+.sector-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 20px;
+}
+
+.sector-btn {
+  padding: 12px 8px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 12px; transition: all 0.2s;
+}
+
+.sector-btn:hover, .sector-btn.selected { border-color: var(--accent); background: rgba(108,92,231,0.15); }
+.sector-btn .sector-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+
+.start-btn {
+  padding: 14px 40px; background: linear-gradient(135deg, var(--accent), #5a4bd1);
+  border: none; border-radius: 10px; color: white; font-size: 16px;
+  font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
+  letter-spacing: 2px; margin-top: 12px; transition: all 0.2s;
+}
+
+.start-btn:hover { transform: scale(1.05); }
+
+/* Win/milestone overlay */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; display: none;
+}
+
+.overlay.active { display: flex; }
+
+.overlay-box {
+  background: var(--surface); border: 1px solid var(--accent);
+  border-radius: 16px; padding: 40px; text-align: center; max-width: 450px;
+}
+
+.overlay-box h2 { font-size: 28px; margin-bottom: 8px; }
+.overlay-box p { color: var(--dim); margin-bottom: 20px; line-height: 1.6; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- STARTUP -->
+<div class="startup-screen" id="startupScreen">
+  <div class="startup-box">
+    <h1>EMPIRE</h1>
+    <div class="tagline">TECH STARTUP SIMULATOR</div>
+    <input class="startup-input" id="companyName" placeholder="Název tvé firmy" maxlength="24" value="">
+    <div class="sector-grid" id="sectorGrid"></div>
+    <button class="start-btn" onclick="startGame()">ZALOŽIT FIRMU →</button>
+  </div>
+</div>
+
+<!-- MILESTONE OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overlayTitle">🏆</h2>
+    <p id="overlayText"></p>
+    <button class="start-btn" onclick="closeOverlay()" style="font-size:13px;padding:10px 30px;">POKRAČOVAT</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="game-container" id="gameUI" style="display:none;">
+  <div class="header">
+    <h1>EMPIRE</h1>
+    <div class="header-stats">
+      <div class="stat"><div><div class="stat-label">Kapitál</div><div class="stat-value stat-money" id="hMoney">0 Kč</div></div></div>
+      <div class="stat"><div><div class="stat-label">Reputace</div><div class="stat-value stat-rep" id="hRep">0</div></div></div>
+      <div class="stat"><div><div class="stat-label">Týden</div><div class="stat-value stat-week" id="hWeek">1</div></div></div>
+      <div class="stat"><div><div class="stat-label">Valuace</div><div class="stat-value stat-money" id="hVal">0 Kč</div></div></div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT: Company -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Firma</div>
+        <div class="company-name" id="cName">—</div>
+        <div class="company-type" id="cType">—</div>
+        <div class="metric"><span class="metric-name">Produkt</span><span class="metric-value" id="mProduct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pProduct" style="width:0%;background:var(--accent);"></div></div>
+        <div class="metric"><span class="metric-name">Marketing</span><span class="metric-value" id="mMarketing">0</span></div>
+        <div class="metric"><span class="metric-name">Zákazníci</span><span class="metric-value" id="mCustomers">0</span></div>
+        <div class="metric"><span class="metric-name">MRR</span><span class="metric-value stat-money" id="mMRR">0 Kč</span></div>
+        <div class="metric"><span class="metric-name">Burn rate</span><span class="metric-value stat-bad" id="mBurn">0 Kč/t</span></div>
+        <div class="metric"><span class="metric-name">Runway</span><span class="metric-value" id="mRunway">∞</span></div>
+      </div>
+      <div class="panel" style="margin-top:12px;">
+        <div class="panel-title">Tým (<span id="teamCount">1</span>)</div>
+        <div id="teamList">
+          <div class="team-member">
+            <div class="team-avatar">👤</div>
+            <div class="team-info">
+              <div class="team-name" id="founderName">Ty</div>
+              <div class="team-role">CEO & Founder</div>
+              <div class="team-skill">DEV 3 / BIZ 5 / MKT 2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Actions + Log -->
+    <div class="center-area">
+      <div class="panel">
+        <div class="panel-title">Akce tento týden</div>
+        <div class="actions-grid" id="actionsGrid"></div>
+      </div>
+      <div class="panel" style="flex:1;display:flex;flex-direction:column;">
+        <div class="panel-title">Log</div>
+        <div class="log-area" id="logArea"></div>
+      </div>
+      <button class="next-week-btn" id="nextWeekBtn" onclick="nextWeek()">DALŠÍ TÝDEN →</button>
+    </div>
+
+    <!-- RIGHT: Events -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Události</div>
+        <div id="eventsArea"><div style="color:var(--dim);font-size:12px;">Zatím klid...</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px;">
+        <div class="panel-title">Milníky</div>
+        <div id="milestonesArea"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== GAME STATE ======
+let G = {
+  name: '', sector: null, week: 1,
+  money: 500000, rep: 0,
+  product: 0, marketing: 0, customers: 0,
+  mrr: 0, burnRate: 0,
+  team: [], actionsLeft: 2, maxActions: 2,
+  milestones: [], events: [],
+  totalRevenue: 0, invested: 0,
+  pivots: 0, hires: 0
+};
+
+const SECTORS = [
+  { id:'saas', name:'SaaS', icon:'☁️', desc:'B2B software', mrrBase:2000, difficulty:1 },
+  { id:'ai', name:'AI/ML', icon:'🧠', desc:'Umělá inteligence', mrrBase:3500, difficulty:1.3 },
+  { id:'fintech', name:'FinTech', icon:'💳', desc:'Finance & platby', mrrBase:4000, difficulty:1.5 },
+  { id:'ecommerce', name:'E-commerce', icon:'🛒', desc:'Online obchod', mrrBase:1500, difficulty:0.8 },
+  { id:'gaming', name:'Gaming', icon:'🎮', desc:'Hry & zábava', mrrBase:1000, difficulty:1.2 },
+  { id:'health', name:'HealthTech', icon:'🏥', desc:'Zdravotnictví', mrrBase:5000, difficulty:1.8 },
+];
+
+const NAMES = ['Tomáš','Petra','Jakub','Lucie','Martin','Karolína','David','Tereza','Filip','Adéla','Matěj','Nela','Ondřej','Barbora','Vojtěch','Simona'];
+const ROLES = ['Frontend Dev','Backend Dev','Full-stack','Designer','Marketer','Sales','Data Analyst','DevOps','Product Manager'];
+const AVATARS = ['👩‍💻','👨‍💻','🧑‍💻','👩‍🎨','👨‍💼','👩‍💼','🧑‍🔬','👨‍🔧','👩‍🏫'];
+
+const MILESTONES = [
+  { id:'mvp', name:'MVP Hotový', check: g => g.product >= 100, msg:'Tvůj produkt je live! 🚀' },
+  { id:'first10', name:'10 Zákazníků', check: g => g.customers >= 10, msg:'Prvních 10 platících!' },
+  { id:'ramen', name:'Ramen Profitable', check: g => g.mrr > g.burnRate && g.mrr > 0, msg:'MRR > Burn rate. Přežiješ! 🍜' },
+  { id:'100k', name:'100K MRR', check: g => g.mrr >= 100000, msg:'100K MRR. Investoři volají.' },
+  { id:'team5', name:'Tým 5+', check: g => g.team.length >= 5, msg:'Tvůj tým roste!' },
+  { id:'mil', name:'Milionář', check: g => g.money >= 1000000, msg:'Milion na účtu! 💰' },
+  { id:'10mil', name:'Valuace 10M', check: g => getValuation() >= 10000000, msg:'Valuace 10M Kč! Seš unicorn candidate.' },
+  { id:'50mil', name:'Valuace 50M', check: g => getValuation() >= 50000000, msg:'50M Kč valuace. 🦄 Legenda!' },
+  { id:'ipo', name:'EXIT', check: g => getValuation() >= 100000000, msg:'100M+ valuace. EXIT! Vyhrál jsi EMPIRE! 🏆🏆🏆' },
+];
+
+// ====== INIT ======
+const sectorGrid = document.getElementById('sectorGrid');
+SECTORS.forEach(s => {
+  const btn = document.createElement('button');
+  btn.className = 'sector-btn';
+  btn.innerHTML = `<span class="sector-icon">${s.icon}</span>${s.name}`;
+  btn.onclick = () => { document.querySelectorAll('.sector-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); G.sector = s; };
+  sectorGrid.appendChild(btn);
+});
+
+function startGame() {
+  G.name = document.getElementById('companyName').value.trim() || 'Startup X';
+  if (!G.sector) G.sector = SECTORS[1]; // default AI
+  document.getElementById('startupScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'block';
+  document.getElementById('cName').textContent = G.name;
+  document.getElementById('cType').textContent = G.sector.icon + ' ' + G.sector.name;
+  document.getElementById('founderName').textContent = 'Bořek';
+  G.actionsLeft = 2;
+  log('info', `${G.name} založen. Sektor: ${G.sector.name}. Máš 500K Kč seed money.`);
+  log('info', 'Tvůj cíl: dostat valuaci na 100M Kč. Go!');
+  renderActions();
+  updateUI();
+}
+
+// ====== ACTIONS ======
+const ACTIONS = [
+  { id:'code', icon:'💻', label:'Vývoj', desc:'Posuň produkt', cost:0, action: doCode },
+  { id:'hire', icon:'👥', label:'Hiring', desc:'Najmi člena', cost:0, action: doHire },
+  { id:'market', icon:'📣', label:'Marketing', desc:'Získej zákazníky', cost:20000, action: doMarketing },
+  { id:'sales', icon:'🤝', label:'Sales', desc:'Přímý prodej', cost:5000, action: doSales },
+  { id:'pitch', icon:'🎤', label:'Pitch', desc:'Investor meeting', cost:0, action: doPitch },
+  { id:'network', icon:'🌐', label:'Networking', desc:'+Reputace', cost:10000, action: doNetwork },
+  { id:'pivot', icon:'🔄', label:'Pivot', desc:'Změň směr', cost:50000, action: doPivot },
+  { id:'learn', icon:'📚', label:'Studium', desc:'+Skills', cost:0, action: doLearn },
+  { id:'grind', icon:'🔥', label:'Grind', desc:'Extra akce', cost:0, action: doGrind },
+];
+
+function renderActions() {
+  const grid = document.getElementById('actionsGrid');
+  grid.innerHTML = '';
+  ACTIONS.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    const canAfford = G.money >= a.cost;
+    const hasActions = G.actionsLeft > 0;
+    btn.disabled = !canAfford || !hasActions;
+    btn.innerHTML = `<div class="icon">${a.icon}</div><div class="label">${a.label}</div><div class="cost">${a.cost > 0 ? fmt(a.cost) : 'Free'}</div>`;
+    btn.onclick = () => { if(canAfford && hasActions) { G.money -= a.cost; G.actionsLeft--; a.action(); renderActions(); updateUI(); checkMilestones(); }};
+    grid.appendChild(btn);
+  });
+}
+
+// ====== ACTION HANDLERS ======
+function doCode() {
+  const devPower = 3 + G.team.filter(t=>t.role.includes('Dev')||t.role.includes('stack')).length * 2;
+  const gain = Math.floor(rng(8,18) * (1 + devPower * 0.15));
+  G.product = Math.min(G.product + gain, 200);
+  log('good', `Vývoj: produkt +${gain}% (celkem ${G.product}%)`);
+  if (rng(1,10) > 7) { log('bad', 'Bug v produkci! -3% produkt.'); G.product = Math.max(0, G.product - 3); }
+}
+
+function doHire() {
+  const salary = Math.floor(rng(25000, 65000));
+  const name = NAMES[rng(0, NAMES.length-1)];
+  const role = ROLES[rng(0, ROLES.length-1)];
+  const skill = rng(1,5);
+  const member = { name, role, skill, salary, avatar: AVATARS[rng(0,AVATARS.length-1)] };
+  G.team.push(member);
+  G.hires++;
+  log('good', `Nový člen: ${name} (${role}, skill ${skill}, ${fmt(salary)}/t)`);
+  renderTeam();
+}
+
+function doMarketing() {
+  const power = 2 + G.team.filter(t=>t.role==='Marketer'||t.role==='Designer').length * 2;
+  const reach = Math.floor(rng(50,200) * (1 + power * 0.2) * (G.product >= 100 ? 2 : 0.5));
+  G.marketing += reach;
+  const newCust = G.product >= 50 ? Math.floor(reach * rng(5,15) / 100) : 0;
+  G.customers += newCust;
+  log('good', `Marketing: reach +${reach}, noví zákazníci: ${newCust}`);
+}
+
+function doSales() {
+  if (G.product < 50) { log('bad', 'Produkt ještě není dost dobrý na sales (<50%).'); G.money += 5000; return; }
+  const power = 5 + G.team.filter(t=>t.role==='Sales').length * 3 + Math.floor(G.rep / 20);
+  const deals = Math.floor(rng(1,5) * (1 + power * 0.1));
+  G.customers += deals;
+  log('good', `Sales: +${deals} zákazníků přes direct outreach.`);
+}
+
+function doPitch() {
+  const chance = Math.min(80, 10 + G.rep + G.product * 0.3 + G.customers * 0.5);
+  if (rng(1,100) <= chance) {
+    const amount = Math.floor(rng(200000, 2000000) * (1 + G.rep / 50));
+    G.money += amount;
+    G.invested += amount;
+    G.rep += rng(3,8);
+    log('gold', `🎉 Investor deal! +${fmt(amount)}. Celkem investováno: ${fmt(G.invested)}`);
+  } else {
+    G.rep += 1;
+    log('bad', `Investor řekl ne. Ale +1 reputace za zkušenost.`);
+  }
+}
+
+function doNetwork() {
+  const gain = rng(3, 10);
+  G.rep += gain;
+  log('info', `Networking event: +${gain} reputace.`);
+  if (rng(1,10) > 7) {
+    const bonus = rng(1,3);
+    G.rep += bonus;
+    log('gold', `Potkal jsi klíčového kontakta! Extra +${bonus} rep.`);
+  }
+}
+
+function doPivot() {
+  const oldSector = G.sector;
+  const available = SECTORS.filter(s => s.id !== G.sector.id);
+  G.sector = available[rng(0, available.length-1)];
+  G.product = Math.floor(G.product * 0.4);
+  G.customers = Math.floor(G.customers * 0.3);
+  G.pivots++;
+  document.getElementById('cType').textContent = G.sector.icon + ' ' + G.sector.name;
+  log('info', `PIVOT: ${oldSector.name} → ${G.sector.name}. Produkt reset na ${G.product}%, zákazníci na ${G.customers}.`);
+}
+
+function doLearn() {
+  const skills = ['vyjednávání','leadership','technické skills','marketing strategy','finanční plánování'];
+  const skill = skills[rng(0,skills.length-1)];
+  G.maxActions = Math.min(4, G.maxActions + (rng(1,10) > 8 ? 1 : 0));
+  G.rep += 1;
+  log('info', `Studium: ${skill}. +1 rep. ${G.maxActions > 2 ? '⬆️ Max akce: '+G.maxActions : ''}`);
+}
+
+function doGrind() {
+  G.actionsLeft += 1;
+  log('info', '🔥 Grind mode! +1 extra akce tento týden. (Ale pozor na burnout...)');
+  if (rng(1,10) > 6) { log('bad', 'Burnout hit! Příští týden -1 akce.'); G._burnout = true; }
+}
+
+// ====== WEEKLY TICK ======
+function nextWeek() {
+  G.week++;
+  
+  // Revenue
+  if (G.product >= 50 && G.customers > 0) {
+    G.mrr = Math.floor(G.customers * G.sector.mrrBase * (G.product / 100) * (1 + G.rep / 200));
+  }
+  G.totalRevenue += G.mrr;
+  G.money += G.mrr;
+  
+  // Burn
+  const teamCost = G.team.reduce((s,t) => s + t.salary, 0);
+  const opsCost = Math.floor(5000 + G.customers * 100);
+  G.burnRate = teamCost + opsCost;
+  G.money -= G.burnRate;
+  
+  // Organic growth
+  if (G.product >= 80 && G.customers > 5) {
+    const organic = Math.floor(G.customers * rng(2,8) / 100);
+    if (organic > 0) { G.customers += organic; log('good', `Organický růst: +${organic} zákazníků`); }
+  }
+  
+  // Churn
+  if (G.customers > 10) {
+    const churn = Math.floor(G.customers * rng(1,5) / 100);
+    if (churn > 0) { G.customers -= churn; log('bad', `Churn: -${churn} zákazníků`); }
+  }
+  
+  // Random events
+  if (rng(1,10) > 6) generateEvent();
+  
+  // Actions reset
+  G.actionsLeft = G.maxActions;
+  if (G._burnout) { G.actionsLeft = Math.max(1, G.actionsLeft - 1); G._burnout = false; log('bad', 'Burnout efekt: -1 akce tento týden.'); }
+  
+  // Bankruptcy check
+  if (G.money < 0) {
+    log('bad', `⚠️ BANKROT! Kapitál: ${fmt(G.money)}. Game over za 2 týdny bez cash.`);
+    if (G.money < -200000) {
+      log('bad', '💀 GAME OVER — Firma zkrachovala.');
+      document.getElementById('nextWeekBtn').disabled = true;
+      showOverlay('💀 GAME OVER', `${G.name} zkrachoval v týdnu ${G.week}.\nValuace: ${fmt(getValuation())}\nCelkový revenue: ${fmt(G.totalRevenue)}`);
+      return;
+    }
+  }
+  
+  log('info', `── Týden ${G.week} ── MRR: ${fmt(G.mrr)} | Burn: ${fmt(G.burnRate)} | Cash: ${fmt(G.money)}`);
+  
+  renderActions();
+  updateUI();
+  checkMilestones();
+}
+
+// ====== EVENTS ======
+const EVENT_TEMPLATES = [
+  { type:'opportunity', title:'Investor sám zavolal!', desc:'Nabízí rychlý deal.', yes:g=>{const a=rng(300000,1500000);g.money+=a;g.invested+=a;return`+${fmt(a)} investice!`;}, no:()=>'Odmítnuto.' },
+  { type:'opportunity', title:'Virální post', desc:'Tvůj produkt se dostal na HN.', yes:g=>{const c=rng(10,50);g.customers+=c;g.rep+=5;return`+${c} zákazníků, +5 rep!`;}, no:()=>'Šance promarněna.' },
+  { type:'threat', title:'Konkurent vstoupil na trh', desc:'Velký hráč kopíruje tvůj produkt.', yes:g=>{g.money-=100000;g.product+=15;return`Investoval jsi 100K do předstihu. Produkt +15%.`;}, no:g=>{g.customers=Math.floor(g.customers*0.85);return`Ztratil jsi 15% zákazníků.`;} },
+  { type:'opportunity', title:'Startup weekend', desc:'Příležitost na networking.', yes:g=>{g.rep+=rng(5,15);return`+${g.rep} reputace!`;}, no:()=>'Přeskočeno.' },
+  { type:'threat', title:'Klíčový zaměstnanec odchází', desc:'Tvůj nejlepší dev chce odejít.', yes:g=>{g.money-=50000;return`Retention bonus 50K. Zůstává.`;}, no:g=>{if(g.team.length>0){const t=g.team.pop();return`${t.name} odešel.`;}return'Nikdo neodešel.';} },
+  { type:'opportunity', title:'Partnerství s korporátem', desc:'Velká firma chce integraci.', yes:g=>{const c=rng(20,80);g.customers+=c;g.rep+=10;return`+${c} enterprise zákazníků!`;}, no:()=>'Zamítnuto.' },
+  { type:'threat', title:'Server outage', desc:'Produkce spadla na 2 hodiny.', yes:g=>{g.money-=30000;return`Opraveno za 30K. Reputace zachráněna.`;}, no:g=>{g.rep=Math.max(0,g.rep-5);g.customers=Math.floor(g.customers*0.95);return`-5 rep, -5% zákazníků.`;} },
+  { type:'opportunity', title:'Akvizice nabídka', desc:'Někdo chce koupit tvou firmu.', yes:g=>{const v=getValuation();g.money+=v;showOverlay('🏆 ACQUISITION EXIT!',`${G.name} prodán za ${fmt(v)}!\nTýden: ${G.week}\nCelkový revenue: ${fmt(G.totalRevenue)}`);return`SOLD za ${fmt(v)}!`;}, no:()=>'Odmítnuto. Jedeš dál.' },
+];
+
+function generateEvent() {
+  const tmpl = EVENT_TEMPLATES[rng(0, EVENT_TEMPLATES.length-1)];
+  const area = document.getElementById('eventsArea');
+  const card = document.createElement('div');
+  card.className = `event-card ${tmpl.type}`;
+  card.innerHTML = `
+    <div class="event-title">${tmpl.title}</div>
+    <div class="event-desc">${tmpl.desc}</div>
+    <div class="event-actions">
+      <button class="event-btn primary" data-choice="yes">Akce</button>
+      <button class="event-btn" data-choice="no">Ignorovat</button>
+    </div>`;
+  card.querySelector('[data-choice="yes"]').onclick = () => { const r = tmpl.yes(G); log('gold', `${tmpl.title}: ${r}`); card.remove(); updateUI(); };
+  card.querySelector('[data-choice="no"]').onclick = () => { const r = tmpl.no(G); log('info', `${tmpl.title}: ${r}`); card.remove(); updateUI(); };
+  area.prepend(card);
+}
+
+// ====== MILESTONES ======
+function checkMilestones() {
+  MILESTONES.forEach(m => {
+    if (!G.milestones.includes(m.id) && m.check(G)) {
+      G.milestones.push(m.id);
+      log('gold', `🏆 MILNÍK: ${m.name} — ${m.msg}`);
+      renderMilestones();
+      if (m.id === 'ipo') showOverlay('🏆 EMPIRE COMPLETE!', `${G.name} dosáhl valuace 100M+ Kč!\nTýden: ${G.week} | Revenue: ${fmt(G.totalRevenue)} | Team: ${G.team.length+1}\n\nGratuluju, Bořku. Tohle je teprve začátek.`);
+    }
+  });
+}
+
+function renderMilestones() {
+  const area = document.getElementById('milestonesArea');
+  area.innerHTML = MILESTONES.map(m => 
+    `<div style="font-size:12px;padding:4px 0;${G.milestones.includes(m.id)?'color:var(--gold)':'color:var(--dim)'}">${G.milestones.includes(m.id)?'✅':'⬜'} ${m.name}</div>`
+  ).join('');
+}
+
+// ====== UI ======
+function updateUI() {
+  document.getElementById('hMoney').textContent = fmt(G.money);
+  document.getElementById('hRep').textContent = G.rep;
+  document.getElementById('hWeek').textContent = G.week;
+  document.getElementById('hVal').textContent = fmt(getValuation());
+  document.getElementById('mProduct').textContent = G.product + '%';
+  document.getElementById('pProduct').style.width = Math.min(100, G.product) + '%';
+  document.getElementById('mMarketing').textContent = G.marketing;
+  document.getElementById('mCustomers').textContent = G.customers;
+  document.getElementById('mMRR').textContent = fmt(G.mrr) + '/t';
+  document.getElementById('mBurn').textContent = fmt(G.burnRate) + '/t';
+  const runway = G.burnRate > G.mrr && G.burnRate > 0 ? Math.floor(G.money / (G.burnRate - G.mrr)) + ' týdnů' : '∞';
+  document.getElementById('mRunway').textContent = runway;
+  document.getElementById('teamCount').textContent = G.team.length + 1;
+  renderMilestones();
+}
+
+function renderTeam() {
+  const list = document.getElementById('teamList');
+  list.innerHTML = `<div class="team-member"><div class="team-avatar">👤</div><div class="team-info"><div class="team-name">Bořek</div><div class="team-role">CEO & Founder</div><div class="team-skill">DEV 3 / BIZ 5 / MKT 2</div></div></div>`;
+  G.team.forEach(t => {
+    list.innerHTML += `<div class="team-member"><div class="team-avatar">${t.avatar}</div><div class="team-info"><div class="team-name">${t.name}</div><div class="team-role">${t.role} (${fmt(t.salary)}/t)</div><div class="team-skill">Skill: ${t.skill}/5</div></div></div>`;
+  });
+}
+
+function getValuation() {
+  return Math.floor((G.mrr * 12 * 8) + (G.rep * 10000) + (G.product * 5000) + (G.customers * 2000) + (G.invested * 0.5));
+}
+
+// ====== HELPERS ======
+function fmt(n) { 
+  if (Math.abs(n) >= 1000000) return (n/1000000).toFixed(1) + 'M Kč';
+  return n.toLocaleString('cs-CZ') + ' Kč'; 
+}
+
+function rng(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function log(type, text) {
+  const area = document.getElementById('logArea');
+  const cls = type === 'good' ? 'log-good' : type === 'bad' ? 'log-bad' : type === 'gold' ? 'log-gold' : 'log-info';
+  area.innerHTML += `<div class="log-entry ${cls}"><span class="time">T${G.week}</span>${text}</div>`;
+  area.scrollTop = area.scrollHeight;
+}
+
+function showOverlay(title, text) {
+  document.getElementById('overlayTitle').textContent = title;
+  document.getElementById('overlayText').textContent = text;
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeOverlay() { document.getElementById('overlay').classList.remove('active'); }
+
+// Init milestones display
+renderMilestones();
+</script>
+</body>
+</html>

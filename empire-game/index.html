@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMPIRE — Startup Tycoon</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a2e;
+  --border: #2a2a3e;
+  --accent: #6c5ce7;
+  --accent2: #a29bfe;
+  --green: #00e676;
+  --red: #ff5252;
+  --gold: #ffd700;
+  --text: #e0e0e0;
+  --dim: #666680;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.game-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* TOP BAR */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.game-title {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 4px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-value.money { color: var(--green); }
+.stat-value.reputation { color: var(--gold); }
+.stat-value.week { color: var(--accent2); }
+
+/* MAIN GRID */
+.main-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr 320px;
+  gap: 20px;
+  min-height: calc(100vh - 140px);
+}
+
+/* PANELS */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 140px);
+}
+
+.panel-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--dim);
+  margin-bottom: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+/* COMPANY PANEL */
+.company-info {
+  margin-bottom: 16px;
+}
+
+.company-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent2);
+}
+
+.company-type {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.skill-bar {
+  margin-bottom: 12px;
+}
+
+.skill-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.skill-name { color: var(--text); }
+.skill-level { color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+
+.bar-bg {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.bar-fill.sales { background: linear-gradient(90deg, #6c5ce7, #a29bfe); }
+.bar-fill.tech { background: linear-gradient(90deg, #00b894, #55efc4); }
+.bar-fill.leadership { background: linear-gradient(90deg, #fdcb6e, #ffeaa7); }
+.bar-fill.hustle { background: linear-gradient(90deg, #e17055, #fab1a0); }
+.bar-fill.eq { background: linear-gradient(90deg, #e84393, #fd79a8); }
+
+/* TEAM */
+.team-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: var(--surface2);
+}
+
+.member-info { flex: 1; }
+.member-name { font-weight: 600; }
+.member-role { font-size: 11px; color: var(--dim); }
+.member-cost { font-size: 11px; color: var(--red); font-family: 'JetBrains Mono', monospace; }
+
+/* CENTER - EVENT */
+.event-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.event-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: var(--surface2);
+}
+
+.event-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.event-subtitle {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.event-story {
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 24px;
+  color: var(--text);
+  flex: 1;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.choice-btn {
+  padding: 16px 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-btn:hover {
+  border-color: var(--accent);
+  background: #1e1e35;
+  transform: translateX(4px);
+}
+
+.choice-btn:active {
+  transform: translateX(2px);
+}
+
+.choice-label {
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 4px;
+}
+
+.choice-desc {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.choice-cost {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.choice-cost.negative { color: var(--red); }
+.choice-cost.positive { color: var(--green); }
+
+/* LOG PANEL */
+.log-entry {
+  padding: 10px;
+  border-left: 3px solid var(--border);
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.log-entry.good { border-color: var(--green); }
+.log-entry.bad { border-color: var(--red); }
+.log-entry.neutral { border-color: var(--accent); }
+.log-entry.gold { border-color: var(--gold); }
+
+.log-week {
+  font-size: 10px;
+  color: var(--dim);
+}
+
+/* RESULT OVERLAY */
+.result-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-overlay.active { display: flex; }
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  text-align: center;
+}
+
+.result-emoji { font-size: 64px; margin-bottom: 16px; }
+.result-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.result-subtitle { color: var(--dim); margin-bottom: 24px; }
+
+.result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.result-stat {
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.result-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--dim);
+}
+
+.result-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.restart-btn {
+  padding: 14px 32px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.restart-btn:hover { background: var(--accent2); }
+
+/* INTRO */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-overlay.hidden { display: none; }
+
+.intro-card {
+  max-width: 600px;
+  text-align: center;
+  padding: 40px;
+}
+
+.intro-emoji { font-size: 80px; margin-bottom: 20px; }
+
+.intro-title {
+  font-size: 42px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 6px;
+  margin-bottom: 12px;
+}
+
+.intro-sub {
+  font-size: 16px;
+  color: var(--dim);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.intro-input {
+  width: 100%;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 18px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.intro-input:focus { border-color: var(--accent); }
+
+.type-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.type-option {
+  padding: 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.type-option:hover { border-color: var(--accent); }
+.type-option.selected { border-color: var(--accent); background: var(--surface2); }
+.type-option-emoji { font-size: 28px; }
+.type-option-name { font-weight: 700; margin-top: 4px; }
+.type-option-desc { font-size: 11px; color: var(--dim); margin-top: 2px; }
+
+.start-btn {
+  padding: 16px 48px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.start-btn:hover { transform: scale(1.05); }
+
+/* ANIMATIONS */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in { animation: slideIn 0.4s ease; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media (max-width: 1000px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .panel { max-height: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="intro-overlay" id="intro">
+  <div class="intro-card">
+    <div class="intro-emoji">🏗️</div>
+    <div class="intro-title">EMPIRE</div>
+    <div class="intro-sub">
+      Máš 20 let, milion na účtu a nekonečnou ambici.<br>
+      Vybuduj startup impérium za 52 týdnů.<br>
+      Každé rozhodnutí má následky.
+    </div>
+    <input class="intro-input" id="companyName" placeholder="Název tvé firmy..." value="Vaněk Ventures">
+    <div class="type-select" id="typeSelect">
+      <div class="type-option selected" data-type="ai" onclick="selectType(this)">
+        <div class="type-option-emoji">🤖</div>
+        <div class="type-option-name">AI / SaaS</div>
+        <div class="type-option-desc">Vysoký risk, vysoký reward</div>
+      </div>
+      <div class="type-option" data-type="ecom" onclick="selectType(this)">
+        <div class="type-option-emoji">📦</div>
+        <div class="type-option-name">E-commerce</div>
+        <div class="type-option-desc">Stabilní growth, nižší strop</div>
+      </div>
+      <div class="type-option" data-type="agency" onclick="selectType(this)">
+        <div class="type-option-emoji">🎯</div>
+        <div class="type-option-name">Agency</div>
+        <div class="type-option-desc">Cash flow king, těžké škálovat</div>
+      </div>
+      <div class="type-option" data-type="fintech" onclick="selectType(this)">
+        <div class="type-option-emoji">💳</div>
+        <div class="type-option-name">Fintech</div>
+        <div class="type-option-desc">Regulace hell, obrovský potenciál</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startGame()">ZAČÍT BUDOVAT →</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="game-container" id="gameArea" style="display:none;">
+  <div class="top-bar">
+    <div class="game-title">EMPIRE</div>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-label">Kapitál</div>
+        <div class="stat-value money" id="moneyDisplay">1,000,000 Kč</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">MRR</div>
+        <div class="stat-value money" id="mrrDisplay">0 Kč</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Reputace</div>
+        <div class="stat-value reputation" id="repDisplay">50</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Týden</div>
+        <div class="stat-value week" id="weekDisplay">1/52</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT -->
+    <div class="panel" id="leftPanel">
+      <div class="panel-title">📊 Tvůj startup</div>
+      <div class="company-info">
+        <div class="company-name" id="compDisplay"></div>
+        <div class="company-type" id="typeDisplay"></div>
+      </div>
+      <div id="skillBars"></div>
+      <div class="panel-title" style="margin-top:20px">👥 Tým</div>
+      <div id="teamList"><span style="color:var(--dim);font-size:12px;">Zatím jsi sám. Sólo founder life.</span></div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="panel event-panel" id="centerPanel">
+      <div class="event-header">
+        <div class="event-icon" id="eventIcon">🚀</div>
+        <div>
+          <div class="event-title" id="eventTitle">Začínáme</div>
+          <div class="event-subtitle" id="eventSubtitle">Týden 1</div>
+        </div>
+      </div>
+      <div class="event-story" id="eventStory"></div>
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel" id="rightPanel">
+      <div class="panel-title">📜 Log</div>
+      <div id="logList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="result-emoji" id="resultEmoji">🏆</div>
+    <div class="result-title" id="resultTitle">Game Over</div>
+    <div class="result-subtitle" id="resultSubtitle"></div>
+    <div class="result-stats" id="resultStats"></div>
+    <button class="restart-btn" onclick="location.reload()">ZNOVU →</button>
+  </div>
+</div>
+
+<script>
+// ===== GAME STATE =====
+let G = {
+  money: 1000000,
+  mrr: 0,
+  reputation: 50,
+  week: 1,
+  maxWeeks: 52,
+  companyName: '',
+  companyType: 'ai',
+  skills: { sales: 15, tech: 10, leadership: 5, hustle: 20, eq: 8 },
+  team: [],
+  burn: 0,
+  clients: 0,
+  product: 0, // product quality 0-100
+  funding: 0,
+  log: [],
+  usedEvents: new Set(),
+  streak: 0 // good decisions streak
+};
+
+const TYPE_NAMES = { ai: '🤖 AI / SaaS', ecom: '📦 E-commerce', agency: '🎯 Agency', fintech: '💳 Fintech' };
+const TYPE_BONUS = {
+  ai: { tech: 10, sales: 0 },
+  ecom: { tech: 0, sales: 10 },
+  agency: { sales: 5, hustle: 5 },
+  fintech: { tech: 5, eq: 5 }
+};
+
+function selectType(el) {
+  document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function startGame() {
+  G.companyName = document.getElementById('companyName').value || 'Vaněk Ventures';
+  G.companyType = document.querySelector('.type-option.selected').dataset.type;
+  const bonus = TYPE_BONUS[G.companyType];
+  Object.keys(bonus).forEach(k => G.skills[k] += bonus[k]);
+
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('gameArea').style.display = 'block';
+  updateUI();
+  nextEvent();
+}
+
+// ===== EVENTS =====
+const EVENTS = [
+  // WEEK 1-10: Early stage
+  {
+    id: 'first_client', minWeek: 1, maxWeek: 8, icon: '🤝', title: 'První klient na obzoru',
+    story: 'Kamarád z vysoké ti přeposlal kontakt na malou firmu, co hledá přesně to, co buduješ. Problém? Chtějí to za tři týdny a ty nemáš ani MVP. Šéf říká "dělej cokoliv, ale přines peníze."',
+    choices: [
+      { label: 'Slíb všechno, deliver later', desc: 'Prodej vizi. MVP dodáš za pochodu.', effect: { money: 80000, reputation: -5, skills: { sales: 3, hustle: 2 }, mrr: 15000, product: -5 } },
+      { label: 'Buď upřímný o stavu', desc: 'Řekni pravdu, nabídni pilotní program za sníženou cenu.', effect: { money: 30000, reputation: 8, skills: { eq: 3, sales: 1 }, mrr: 8000, product: 5 } },
+      { label: 'Odmítni a builduj dál', desc: 'Ještě nejsi ready. Lepší ztratit deal než reputaci.', effect: { reputation: 3, skills: { tech: 3 }, product: 15 } }
+    ]
+  },
+  {
+    id: 'cofounder', minWeek: 2, maxWeek: 12, icon: '👥', title: 'Potenciální co-founder',
+    story: 'Na meetupu potkáš senior developera Martina. 15 let zkušeností, odchází z korporátu, hledá něco smysluplného. Chce 30% equity a nulový plat prvních 6 měsíců. Je brutálně kompetentní, ale taky umíněný – dva alfa samci v jedné firmě?',
+    choices: [
+      { label: 'Nabídni mu partnerství', desc: '30% equity, ale získáš 10x tvou tech kapacitu.', effect: { skills: { tech: 15, leadership: 5 }, product: 20, reputation: 5, team_add: { name: 'Martin', role: 'CTO / Co-founder', emoji: '👨‍💻', cost: 0 } } },
+      { label: 'Nabídni mu job, ne equity', desc: 'Plat 70k/měs, ale firma zůstane 100% tvoje.', effect: { money: -70000, skills: { tech: 8 }, product: 10, burn: 70000, team_add: { name: 'Martin', role: 'Lead Developer', emoji: '👨‍💻', cost: 70000 } } },
+      { label: 'Poděkuj a jdi dál', desc: 'Dva ENTJ pod jednou střechou = exploze.', effect: { skills: { eq: 2 }, hustle: 2 } }
+    ]
+  },
+  {
+    id: 'viral_moment', minWeek: 4, maxWeek: 20, icon: '🔥', title: 'Virální moment',
+    story: 'Tvůj LinkedIn post o tom, jak v 20 letech buduješ AI startup, explodoval. 500k views, inbox plný zpráv. Novináři chtějí rozhovor, investoři píšou, ale taky hejteři — "další Gen Z podnikatel co si hraje na Muska."',
+    choices: [
+      { label: 'Jdi do médií naplno', desc: 'Podcast, rozhovor, Twitter space. Maximální exposure.', effect: { reputation: 20, clients: 5, skills: { sales: 5 }, money: -20000 } },
+      { label: 'Selektivně — jen kvalitní média', desc: 'Jeden rozhovor, jeden podcast. Kvalita > kvantita.', effect: { reputation: 12, clients: 2, skills: { eq: 3, sales: 2 } } },
+      { label: 'Ticho. Ať mluví produkt.', desc: 'Heads down, build mode. Hype je droga.', effect: { product: 10, skills: { tech: 3, hustle: 2 }, reputation: -3 } }
+    ]
+  },
+  {
+    id: 'cash_crunch', minWeek: 6, maxWeek: 25, icon: '💸', title: 'Cash flow krize',
+    story: 'Dva klienti platí pozdě, výdaje rostou, a ty máš 6 týdnů cashe. Burn rate tě dožene rychleji, než jsi čekal. Noční pocení z excelu nikdy nebyla taková sranda.',
+    choices: [
+      { label: 'Řízni náklady brutálně', desc: 'Zruš všechno nepotřebné. Survival mode.', effect: { burn: -30000, reputation: -5, skills: { leadership: 3 }, money: 50000 } },
+      { label: 'Hustle nové dealy', desc: 'Prodej jako nikdy. 14h denně na callech.', effect: { skills: { sales: 5, hustle: 5 }, mrr: 20000, clients: 3, money: -10000 } },
+      { label: 'Hledej investora', desc: 'Angel round. Ztratíš equity, získáš runway.', effect: { money: 500000, reputation: 5, funding: 1, skills: { sales: 3 } } }
+    ]
+  },
+  {
+    id: 'hire_dilemma', minWeek: 8, maxWeek: 30, icon: '🧑‍💼', title: 'Hiring pain',
+    story: 'Potřebuješ marketéra. Máš dva kandidáty: Tereza — juniorna, ale energická, loajální, učí se rychle. Za 35k. Jakub — senior, portfolio plné výsledků, ale chce 85k a má ego větší než tvoje.',
+    choices: [
+      { label: 'Tereza — investice do potenciálu', desc: 'Junior za 35k. Builduj kulturu, ne náklady.', effect: { burn: 35000, skills: { leadership: 4, eq: 2 }, reputation: 3, team_add: { name: 'Tereza', role: 'Marketing', emoji: '👩‍🎨', cost: 35000 } } },
+      { label: 'Jakub — okamžitý impact', desc: 'Senior za 85k. Potřebuješ výsledky, ne potenciál.', effect: { burn: 85000, mrr: 25000, clients: 4, skills: { sales: 3 }, team_add: { name: 'Jakub', role: 'Head of Marketing', emoji: '🧔', cost: 85000 } } },
+      { label: 'Nikdo — dělej marketing sám', desc: 'Ušetříš cash, ale budeš se tříštit.', effect: { skills: { hustle: 4, sales: 2 }, product: -5 } }
+    ]
+  },
+  {
+    id: 'competitor', minWeek: 10, maxWeek: 35, icon: '⚔️', title: 'Konkurence přišla',
+    story: 'Startup ze Slovenska spustil skoro identický produkt. Mají 2M v seedu, 8 lidí v týmu, a jejich CEO sdílí tvoje posty s komentářem "cute." Co teď?',
+    choices: [
+      { label: 'Válka — outwork je', desc: 'Nemají tvůj hustle. Zdvojnásob sales effort.', effect: { skills: { hustle: 5, sales: 4 }, clients: 3, mrr: 15000, money: -50000, reputation: 5 } },
+      { label: 'Differenciace — najdi niche', desc: 'Oni jdou broad. Ty jdi deep do jednoho vertikálu.', effect: { product: 15, skills: { tech: 4 }, mrr: 10000, reputation: 8 } },
+      { label: 'Navrhni spolupráci', desc: 'Pokud nemůžeš porazit, připoj se. Merger talk.', effect: { reputation: -3, skills: { eq: 5, sales: 3 }, money: 100000 } }
+    ]
+  },
+  {
+    id: 'burnout', minWeek: 12, maxWeek: 40, icon: '😵', title: 'Burnout wave',
+    story: '3 měsíce bez volného dne. Spíš 5 hodin, jíš u notebooku, a včera jsi na kamarádovi vybuchl kvůli blbosti. Fitness jde dolů, fokus taky. Tělo i mysl posílají červené flagy.',
+    choices: [
+      { label: 'Týden off — totální reset', desc: 'Vypni telefon, jeď někam, spi 10h denně.', effect: { skills: { eq: 8 }, reputation: -2, product: -3 } },
+      { label: 'Nastav systém, ne volno', desc: 'Deleguj, automatizuj, postav rutiny. Die with Zero mindset.', effect: { skills: { leadership: 5, eq: 3 }, burn: 20000 } },
+      { label: 'Push through', desc: 'Odpočinek je pro ty, co nemají vizi. Jedeš dál.', effect: { skills: { hustle: 5 }, reputation: -5, product: -8, money: 30000, mrr: 10000 } }
+    ]
+  },
+  {
+    id: 'investor_meeting', minWeek: 15, maxWeek: 42, icon: '🦈', title: 'Investor pitch',
+    story: 'Dostal jsi se na pitch před český VC fond. 10 minut na to přesvědčit partnera, že 20letej kluk z Rackové si zaslouží jejich miliony. "Proč zrovna ty?" ptá se skepticky.',
+    choices: [
+      { label: 'Sebejistý pitch — čísla + vize', desc: 'MRR, traction, TAM. Pak emoce — proč to děláš.', effect: { money: 2000000, funding: 1, reputation: 15, skills: { sales: 5, leadership: 3 } } },
+      { label: 'Odmítni a bootstrapuj', desc: '"Nepotřebuju vaše peníze. Potřebuju víc klientů."', effect: { reputation: 10, skills: { hustle: 5 }, streak: 1 } },
+      { label: 'Vyjednej lepší podmínky', desc: 'Chceš peníze, ale ne za 40% equity. Counternabídka.', effect: { money: 1000000, funding: 1, reputation: 8, skills: { sales: 4, eq: 3 } } }
+    ]
+  },
+  {
+    id: 'toxic_client', minWeek: 8, maxWeek: 35, icon: '☠️', title: 'Toxický klient',
+    story: 'Tvůj největší klient (40% revenue) volá. Opět. "Tady CEO Novák. To co jste dodali je na hovno. Chci slevu 50% nebo odcházím. A řeknu všem." Je to bluff? Možná. Ale 40% revenue...',
+    choices: [
+      { label: 'Stůj si za svým', desc: '"Pane Nováku, naše práce má hodnotu. Tady je co uděláme."', effect: { reputation: 10, skills: { eq: 5, leadership: 3 }, mrr: -10000, clients: -1 } },
+      { label: 'Dej mu slevu', desc: '50% sleva. Bolí to, ale cash flow pokračuje.', effect: { mrr: -8000, reputation: -8, skills: { sales: 2 } } },
+      { label: 'Fire the client', desc: '"Děkuji za spolupráci, ale tímhle směrem ne." Drop.', effect: { mrr: -15000, reputation: 15, skills: { leadership: 5, eq: 4 }, clients: -1 } }
+    ]
+  },
+  {
+    id: 'dating_life', minWeek: 5, maxWeek: 45, icon: '❤️', title: 'Osobní život volá',
+    story: 'Na afterparty potkáš Karolínu. Právnička, ostrá jako břitva, humor na tvé úrovni. Oba víte, že mezi vámi něco jiskří. Ale... máš čas na vztah uprostřed budování impéria?',
+    choices: [
+      { label: 'Dej tomu šanci', desc: 'Die with Zero — zážitky > jen hustle. Pozvi ji na kafe.', effect: { skills: { eq: 8 }, reputation: 3, product: -3 } },
+      { label: 'Řekni "teď ne"', desc: 'Priorita je firma. Vztah počká.', effect: { skills: { hustle: 4 }, reputation: -2 } },
+      { label: 'Friends with benefits approach', desc: 'Žádné závazky, ale neztratíš kontakt.', effect: { skills: { eq: 3 }, reputation: -3 } }
+    ]
+  },
+  {
+    id: 'tech_disaster', minWeek: 10, maxWeek: 45, icon: '💥', title: 'Serverová apokalypsa',
+    story: 'Pátek, 23:00. Notifikace: "Production is down." Hlavní databáze se rozpadla, záloha je 2 dny stará. Klienti píšou. Jeden hrozí žalobou. Nejtemnější noc tvého startupu.',
+    choices: [
+      { label: 'All hands on deck', desc: 'Zavolej každého, fixni to přes noc. Kafe a adrenalin.', effect: { skills: { leadership: 5, tech: 3 }, reputation: -5, money: -30000 } },
+      { label: 'Transparentní komunikace', desc: 'Status page, email klientům, upřímné ETA.', effect: { skills: { eq: 5, leadership: 3 }, reputation: 3, money: -15000 } },
+      { label: 'Outsource emergency fix', desc: 'Zavolej externí tým. Stojí to, ale je to rychlý.', effect: { money: -100000, reputation: -2, skills: { hustle: 2 } } }
+    ]
+  },
+  {
+    id: 'big_deal', minWeek: 20, maxWeek: 48, icon: '🏢', title: 'Enterprise deal',
+    story: 'ČEZ ti píše. Chtějí pilotní projekt za 2M Kč. Ale podmínky: 6 měsíců exclusive, SOC2 certifikace (nemáš), a dedikovaný tým. Je to game-changer, nebo past?',
+    choices: [
+      { label: 'All in na ČEZ', desc: 'Přesuň všechno na tenhle deal. Enterprise = budoucnost.', effect: { money: 2000000, mrr: 80000, reputation: 20, skills: { sales: 5 }, product: -10, burn: 100000 } },
+      { label: 'Vyjednej flexibilnější podmínky', desc: 'Pilotní projekt ano, exclusive ne. Meet in the middle.', effect: { money: 800000, mrr: 40000, reputation: 10, skills: { sales: 4, eq: 3 } } },
+      { label: 'Odmítni — není to tvůj trh', desc: 'Enterprise tě zabije. Zůstaň u SMB.', effect: { reputation: 5, skills: { leadership: 3 }, product: 10 } }
+    ]
+  },
+  {
+    id: 'partner_betrayal', minWeek: 15, maxWeek: 45, icon: '🗡️', title: 'Zrada v týmu',
+    story: 'Zjistíš, že tvůj sales guy paralelně buduje konkurenční produkt. Používá tvoje klienty, tvůj pitch deck, a tvůj CRM. Krev ti vaří.',
+    choices: [
+      { label: 'Okamžitý výkop + právník', desc: 'NDA porušení. Žádné sentimenty, čistý řez.', effect: { money: -80000, reputation: 5, skills: { leadership: 5 }, clients: -2, team_remove: 'sales' } },
+      { label: 'Konfrontuj ho v klidu', desc: 'Zjisti proč. Možná je to zachranitelné. Možná ne.', effect: { skills: { eq: 8, leadership: 3 }, reputation: 3 } },
+      { label: 'Využij to — absorbuj jeho startup', desc: 'Nabídni mu deal: jeho startup spadne pod tebe, nebo právník.', effect: { skills: { sales: 5, hustle: 5 }, reputation: -5, clients: 2, money: -30000 } }
+    ]
+  },
+  {
+    id: 'acquisition_offer', minWeek: 30, maxWeek: 50, icon: '💎', title: 'Nabídka na akvizici',
+    story: 'Německý korporát ti nabízí exit. 15M Kč za celou firmu. V 20 letech bys byl set na roky. Ale... tohle je teprve začátek, ne?',
+    choices: [
+      { label: 'Prodej — Die with Zero approved', desc: '15M v 20. Nový chapter, nová firma, víc zkušeností.', effect: { money: 15000000, reputation: 20, skills: { sales: 5 }, endgame: 'exit' } },
+      { label: 'Odmítni — tohle stojí víc', desc: '"15M? Za rok to bude 50M." Walk away.', effect: { reputation: 15, skills: { leadership: 5, hustle: 3 }, streak: 2 } },
+      { label: 'Counter — 30M nebo nic', desc: 'Vyjednej. Pokud chtějí, zaplatí reálnou hodnotu.', effect: { money: 8000000, reputation: 10, skills: { sales: 8, eq: 3 } } }
+    ]
+  },
+  {
+    id: 'mentor', minWeek: 3, maxWeek: 20, icon: '🧙', title: 'Mentor se ozval',
+    story: 'Tomáš, 45, exitnul startup za 200M. Nabízí ti mentoring — 2h týdně. Ale má podmínku: "Budu ti říkat věci, které nechceš slyšet. Pokud chceš yes-mana, nejsem tvůj člověk."',
+    choices: [
+      { label: 'Přijmi — potřebuješ to', desc: 'Ego je nepřítel. Přesně jak říká Ryan Holiday.', effect: { skills: { leadership: 8, eq: 5, sales: 3 }, reputation: 5 } },
+      { label: 'Občasná konzultace', desc: 'Jednou za měsíc. Nechceš závislost.', effect: { skills: { leadership: 3, eq: 2 } } },
+      { label: 'Zdvořile odmítni', desc: '"Díky, ale musím si to projít sám."', effect: { skills: { hustle: 3 } } }
+    ]
+  },
+  {
+    id: 'product_pivot', minWeek: 12, maxWeek: 35, icon: '🔄', title: 'Pivot nebo smrt',
+    story: 'Data mluví jasně: tvůj hlavní feature používá 15% uživatelů. Vedlejší feature, co jsi dodal na poslední chvíli? 80% engagement. Buď pivotuješ, nebo ignoruješ data.',
+    choices: [
+      { label: 'Hard pivot', desc: 'Zahoď 3 měsíce práce. Data > ego.', effect: { product: 25, skills: { tech: 5, leadership: 3 }, mrr: 20000, money: -50000 } },
+      { label: 'Soft pivot — dual track', desc: 'Builduj oboje paralelně. Více práce, méně risku.', effect: { product: 10, skills: { tech: 3 }, burn: 30000 } },
+      { label: 'Drž kurz', desc: 'Data lžou. Znáš svou vizi líp než metriky.', effect: { skills: { hustle: 3 }, product: -10, reputation: -5 } }
+    ]
+  },
+  {
+    id: 'conference', minWeek: 8, maxWeek: 40, icon: '🎤', title: 'WebExpo keynote',
+    story: 'WebExpo tě pozvalo na keynote. 2000 lidí, livestream, press. Téma: "Building in your 20s — proč věk není výmluva." 15 minut na pódiu. Jsi ready?',
+    choices: [
+      { label: 'Nail it — brutálně upřímný talk', desc: 'Žádné bullshit slides. Raw příběh, čísla, lekce.', effect: { reputation: 25, skills: { sales: 5, eq: 3 }, clients: 5 } },
+      { label: 'Safe talk — proven framework', desc: 'Méně osobní, ale profesionální a bezpečný.', effect: { reputation: 10, skills: { sales: 3 }, clients: 2 } },
+      { label: 'Panel místo keynote', desc: 'Sdílej pódium. Méně spotlight, ale méně risku.', effect: { reputation: 5, skills: { eq: 3, sales: 2 }, clients: 1 } }
+    ]
+  },
+  {
+    id: 'regulation', minWeek: 15, maxWeek: 45, icon: '⚖️', title: 'Regulace zasáhla',
+    story: 'EU AI Act. Tvůj produkt spadá do kategorie, která vyžaduje compliance za 500k Kč. Máš 6 měsíců na implementaci, jinak pokuta. Welcome to Europe.',
+    choices: [
+      { label: 'Comply okamžitě', desc: 'Bolí to, ale budeš first mover v compliance.', effect: { money: -500000, reputation: 15, product: 10, skills: { tech: 3 } } },
+      { label: 'Minimální compliance', desc: 'Bare minimum, ušetříš cash, risknekneš pokutu.', effect: { money: -150000, reputation: -5, skills: { hustle: 3 } } },
+      { label: 'Pivot mimo regulovanou oblast', desc: 'Přesuň produkt mimo scope. Kreativní, ale riskantní.', effect: { product: -10, skills: { tech: 5 }, money: -80000, reputation: 3 } }
+    ]
+  },
+  {
+    id: 'family', minWeek: 5, maxWeek: 30, icon: '👨‍👩‍👦', title: 'Rodina vs. startup',
+    story: 'Máma volá: "Bořku, neviděli jsme tě 2 měsíce. Táta se ptá, jestli jsi v pohodě." V Rackové se věci nemění, ale ty se měníš rychle. Cítíš distance a trochu vinu.',
+    choices: [
+      { label: 'Jeď domů na víkend', desc: 'Racková ti dá grounding. Potřebuješ kořeny.', effect: { skills: { eq: 8 }, reputation: 2 } },
+      { label: 'Pozvi je k sobě', desc: 'Ukaž jim co buduješ. Ať vidí, že to má smysl.', effect: { skills: { eq: 5, leadership: 2 }, reputation: 3 } },
+      { label: '"Brzy, mami. Teď nemůžu."', desc: 'Upřímné, ale bolí to.', effect: { skills: { hustle: 3 }, reputation: -2 } }
+    ]
+  },
+  {
+    id: 'crypto_opportunity', minWeek: 10, maxWeek: 40, icon: '🪙', title: 'Web3 distrakce',
+    story: 'Kamarád vydělal na meme coinu 3M za týden. "Bro, dej tam 200k, za měsíc máš milion." FOMO je reálné. Ale taky jsi četl Ego je nepřítel...',
+    choices: [
+      { label: 'Drž se plánu', desc: 'Bohatý táta říká: investuj do toho, čemu rozumíš.', effect: { skills: { eq: 5 }, reputation: 5 } },
+      { label: 'Malá pozice — 50k', desc: 'Diverzifikace, ne gambling. Risk management.', effect: { money: -50000, skills: { hustle: 2 } } },
+      { label: 'YOLO 200k', desc: 'Jednou se žije. Die with Zero? Well...', effect: { money: (Math.random() > 0.3 ? -200000 : 600000), reputation: -8, skills: { hustle: 3 } } }
+    ]
+  }
+];
+
+// Random micro events for variety
+const MICRO_EVENTS = [
+  { icon: '📧', title: 'Cold email hit', story: 'Tvůj cold email campaign přinesl 3 odpovědi z 200. Jeden z nich je decision maker v zajímavé firmě.', choices: [
+    { label: 'Follow up agresivně', desc: 'Strike while hot.', effect: { clients: 1, mrr: 8000, skills: { sales: 2 } } },
+    { label: 'Kvalitní follow up', desc: 'Personalizovaný, value-first přístup.', effect: { clients: 1, mrr: 5000, skills: { eq: 2, sales: 1 }, reputation: 3 } }
+  ]},
+  { icon: '🐛', title: 'Bug v produkci', story: 'Minor bug, ale klient si všiml. Nic kritického, ale profesionalita je v detailech.', choices: [
+    { label: 'Hotfix ASAP', desc: 'Drop everything, fix now.', effect: { skills: { tech: 2 }, reputation: 2, product: 3 } },
+    { label: 'Přidej do backlogu', desc: 'Prioritizace. Jsou důležitější věci.', effect: { skills: { leadership: 1 }, reputation: -2 } }
+  ]},
+  { icon: '📰', title: 'Zmínka v médiích', story: 'CzechCrunch o tobě napsal krátký článek. Organic traffic skočil o 300%.', choices: [
+    { label: 'Capitalize — retarget traffic', desc: 'Ads na nové visitors.', effect: { money: -15000, clients: 2, mrr: 10000, skills: { sales: 2 } } },
+    { label: 'Nech to být — organic', desc: 'Nemusíš vždycky optimalizovat.', effect: { clients: 1, reputation: 3 } }
+  ]},
+  { icon: '🏋️', title: 'Gym session', story: 'V posilovně potkáš CEO úspěšného startupu. Small talk u bench pressu. Connections jsou všude.', choices: [
+    { label: 'Pitch mezi sety', desc: 'Networking is a lifestyle.', effect: { skills: { sales: 2, hustle: 2 }, reputation: 2 } },
+    { label: 'Jen trénuj', desc: 'Gym je svatý prostor. Žádný hustle.', effect: { skills: { eq: 3 } } }
+  ]},
+  { icon: '💰', title: 'Cash injection', story: 'Starý klient zaplatil fakturu dříve + doporučil tě dalším dvěma firmám.', choices: [
+    { label: 'Reinvestuj do produktu', desc: 'Víc features, lepší UX.', effect: { money: 50000, product: 8, skills: { tech: 2 } } },
+    { label: 'Reinvestuj do sales', desc: 'Víc klientů > lepší produkt.', effect: { money: 50000, clients: 2, mrr: 12000, skills: { sales: 2 } } }
+  ]},
+  { icon: '🎓', title: 'Online kurz', story: 'YC Startup School, zdarma. 10 hodin obsahu od lidí, co to dotáhli dál než ty. Zatím.', choices: [
+    { label: 'Projdi celý', desc: 'Investice do sebe je nejlepší ROI.', effect: { skills: { leadership: 3, tech: 2, sales: 2 } } },
+    { label: 'Cherrypick', desc: 'Vezmi si jen to, co potřebuješ teď.', effect: { skills: { hustle: 2, sales: 1 } } }
+  ]},
+  { icon: '🍺', title: 'Networking event', story: 'Startup Drinks Praha. Spousta lidí, spousta karet, spousta bullshitu. Ale taky pár gems.', choices: [
+    { label: 'Jdi a dominuj', desc: 'ENTJ natural habitat.', effect: { skills: { sales: 3, eq: 1 }, clients: 1, reputation: 3 } },
+    { label: 'Skip — práce čeká', desc: 'Introvert battery low.', effect: { skills: { tech: 2 }, product: 5 } }
+  ]}
+];
+
+function getAvailableEvents() {
+  const major = EVENTS.filter(e => !G.usedEvents.has(e.id) && G.week >= e.minWeek && G.week <= e.maxWeek);
+  if (major.length > 0 && Math.random() > 0.35) {
+    const e = major[Math.floor(Math.random() * major.length)];
+    G.usedEvents.add(e.id);
+    return e;
+  }
+  return MICRO_EVENTS[Math.floor(Math.random() * MICRO_EVENTS.length)];
+}
+
+function nextEvent() {
+  if (G.week > G.maxWeeks) return endGame();
+  if (G.money < 0) return endGame('bankrupt');
+
+  // Weekly burn
+  G.money -= G.burn;
+  G.money += G.mrr;
+
+  const event = getAvailableEvents();
+  renderEvent(event);
+}
+
+function renderEvent(event) {
+  document.getElementById('eventIcon').textContent = event.icon;
+  document.getElementById('eventTitle').textContent = event.title;
+  document.getElementById('eventSubtitle').textContent = `Týden ${G.week} / 52`;
+  document.getElementById('eventStory').textContent = event.story;
+
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+
+  event.choices.forEach((c, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'choice-btn animate-in';
+    btn.style.animationDelay = `${i * 0.1}s`;
+
+    let costHtml = '';
+    if (c.effect.money) {
+      const v = c.effect.money;
+      costHtml = `<div class="choice-cost ${v < 0 ? 'negative' : 'positive'}">${v < 0 ? '' : '+'}${formatMoney(v)}</div>`;
+    }
+
+    btn.innerHTML = `
+      <div class="choice-label">${c.label}</div>
+      <div class="choice-desc">${c.desc}</div>
+      ${costHtml}
+    `;
+    btn.onclick = () => applyChoice(c, event);
+    choicesDiv.appendChild(btn);
+  });
+
+  updateUI();
+}
+
+function applyChoice(choice, event) {
+  const e = choice.effect;
+
+  if (e.money) G.money += e.money;
+  if (e.mrr) G.mrr += e.mrr;
+  if (e.reputation) G.reputation = Math.max(0, Math.min(100, G.reputation + e.reputation));
+  if (e.clients) G.clients = Math.max(0, G.clients + e.clients);
+  if (e.product) G.product = Math.max(0, Math.min(100, G.product + e.product));
+  if (e.burn) G.burn = Math.max(0, G.burn + e.burn);
+  if (e.funding) G.funding += e.funding;
+  if (e.streak) G.streak += e.streak;
+
+  if (e.skills) {
+    Object.keys(e.skills).forEach(k => {
+      if (G.skills[k] !== undefined) G.skills[k] = Math.min(100, G.skills[k] + e.skills[k]);
+    });
+  }
+
+  if (e.team_add) {
+    G.team.push(e.team_add);
+  }
+
+  // Log
+  const isGood = (e.money > 0 || e.mrr > 0 || e.reputation > 3);
+  const isBad = (e.money < -100000 || e.reputation < -3);
+  addLog(event.title + ': ' + choice.label, isGood ? 'good' : (isBad ? 'bad' : 'neutral'));
+
+  G.week++;
+  if (e.endgame) return endGame(e.endgame);
+  setTimeout(() => nextEvent(), 100);
+}
+
+function addLog(text, type = 'neutral') {
+  G.log.unshift({ text, type, week: G.week });
+  const logList = document.getElementById('logList');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type} animate-in`;
+  entry.innerHTML = `<div class="log-week">Týden ${G.week}</div>${text}`;
+  logList.prepend(entry);
+}
+
+function formatMoney(n) {
+  if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M Kč';
+  if (Math.abs(n) >= 1000) return (n / 1000).toFixed(0) + 'k Kč';
+  return n + ' Kč';
+}
+
+function updateUI() {
+  document.getElementById('moneyDisplay').textContent = formatMoney(G.money);
+  document.getElementById('mrrDisplay').textContent = formatMoney(G.mrr) + '/měs';
+  document.getElementById('repDisplay').textContent = G.reputation;
+  document.getElementById('weekDisplay').textContent = `${G.week}/52`;
+  document.getElementById('compDisplay').textContent = G.companyName;
+  document.getElementById('typeDisplay').textContent = TYPE_NAMES[G.companyType];
+
+  // Skills
+  const skillsDiv = document.getElementById('skillBars');
+  const skillNames = { sales: 'Sales', tech: 'Tech', leadership: 'Leadership', hustle: 'Hustle', eq: 'EQ' };
+  skillsDiv.innerHTML = Object.keys(G.skills).map(k => `
+    <div class="skill-bar">
+      <div class="skill-header">
+        <span class="skill-name">${skillNames[k]}</span>
+        <span class="skill-level">${G.skills[k]}</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill ${k}" style="width:${G.skills[k]}%"></div></div>
+    </div>
+  `).join('');
+
+  // Team
+  const teamDiv = document.getElementById('teamList');
+  if (G.team.length === 0) {
+    teamDiv.innerHTML = '<span style="color:var(--dim);font-size:12px;">Zatím jsi sám. Sólo founder life.</span>';
+  } else {
+    teamDiv.innerHTML = G.team.map(m => `
+      <div class="team-member">
+        <div class="member-avatar">${m.emoji}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name}</div>
+          <div class="member-role">${m.role}</div>
+        </div>
+        <div class="member-cost">${m.cost > 0 ? formatMoney(m.cost) + '/měs' : 'equity'}</div>
+      </div>
+    `).join('');
+  }
+
+  // Color money
+  const moneyEl = document.getElementById('moneyDisplay');
+  moneyEl.style.color = G.money < 200000 ? 'var(--red)' : 'var(--green)';
+}
+
+function endGame(reason) {
+  const overlay = document.getElementById('resultOverlay');
+  overlay.classList.add('active');
+
+  const totalSkills = Object.values(G.skills).reduce((a, b) => a + b, 0);
+  const grade = calculateGrade();
+
+  let emoji, title, subtitle;
+  if (reason === 'bankrupt') {
+    emoji = '💀'; title = 'Bankrot'; subtitle = 'Cash hit zero. Ale naučil ses víc než 99% lidí tvého věku.';
+  } else if (reason === 'exit') {
+    emoji = '🏆'; title = 'EXIT!'; subtitle = `Prodal jsi ${G.companyName} a odcházíš jako legenda.`;
+  } else if (G.money > 5000000) {
+    emoji = '🚀'; title = 'Unicorn Potential'; subtitle = `${G.companyName} je na cestě nahoru. Rok 2 bude ještě divočejší.`;
+  } else if (G.money > 1000000) {
+    emoji = '📈'; title = 'Solid Foundation'; subtitle = 'Přežil jsi první rok. To je víc, než většina startupů.';
+  } else {
+    emoji = '😤'; title = 'Survival Mode'; subtitle = 'Těsné, ale žiješ. Každý velký founder začínal takhle.';
+  }
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultSubtitle').textContent = subtitle;
+
+  document.getElementById('resultStats').innerHTML = `
+    <div class="result-stat">
+      <div class="result-stat-label">Finální kapitál</div>
+      <div class="result-stat-value" style="color:var(--green)">${formatMoney(G.money)}</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-label">MRR</div>
+      <div class="result-stat-value" style="color:var(--green)">${formatMoney(G.mrr)}</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-label">Reputace</div>
+      <div class="result-stat-value" style="color:var(--gold)">${G.reputation}/100</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-label">Skill Total</div>
+      <div class="result-stat-value" style="color:var(--accent2)">${totalSkills}</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-label">Tým</div>
+      <div class="result-stat-value">${G.team.length} lidí</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-label">Grade</div>
+      <div class="result-stat-value" style="color:var(--gold)">${grade}</div>
+    </div>
+  `;
+}
+
+function calculateGrade() {
+  let score = 0;
+  score += G.money / 100000;
+  score += G.mrr / 5000;
+  score += G.reputation;
+  score += Object.values(G.skills).reduce((a, b) => a + b, 0) / 5;
+  score += G.team.length * 10;
+  score += G.streak * 15;
+
+  if (score > 200) return 'S';
+  if (score > 150) return 'A+';
+  if (score > 100) return 'A';
+  if (score > 70) return 'B';
+  if (score > 40) return 'C';
+  return 'D';
+}
+</script>
+</body>
+</html>
