@@ -1,0 +1,125 @@
+🚀 FirmyDB Batch Import to Supabase
+============================================================
+📋 Loaded 70 IČO numbers
+
+📦 BATCH 1/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 00000001 ❌ Not found
+  [2/10] IČO: 00000205 ✅ Vojenské lesy a statky ČR, s.p.
+  [3/10] IČO: 00001279 ⏭️  Already exists, skipping
+  [4/10] IČO: 00010669 ✅ VZLU AEROSPACE, a.s.
+  [5/10] IČO: 00014915 ✅ Metrostav a.s.
+  [6/10] IČO: 00023817 ✅ Státní ústav pro kontrolu léčiv
+  [7/10] IČO: 00177041 ⏭️  Already exists, skipping
+  [8/10] IČO: 00543543 ✅ Bytové družstvo Ořechov
+  [9/10] IČO: 02795281 ⏭️  Already exists, skipping
+  [10/10] IČO: 03480712 ✅ FITSLIM s.r.o.
+
+  💾 Importing 6 companies to Supabase...
+  ✅ Successfully imported 6 companies
+
+📦 BATCH 2/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 03974537 ❌ Not found
+  [2/10] IČO: 04854721 ✅ OÁZA DUŠE, z.s.
+  [3/10] IČO: 05346037 ✅ Lada Brožová
+  [4/10] IČO: 06726828 ✅ Lucie Holubová
+  [5/10] IČO: 15890449 ❌ Not found
+  [6/10] IČO: 15890856 ✅ INGES, spol. s r.o.
+  [7/10] IČO: 18623638 ❌ Not found
+  [8/10] IČO: 24291943 ✅ SAMAK Legal, s.r.o.
+  [9/10] IČO: 25656635 ✅ Pražské vodovody a kanalizace, a.s.
+  [10/10] IČO: 25672720 ⏭️  Already exists, skipping
+
+  💾 Importing 6 companies to Supabase...
+  ✅ Successfully imported 6 companies
+
+📦 BATCH 3/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 25788001 ✅ Vodafone Czech Republic a.s.
+  [2/10] IČO: 26138433 ✅ ROVAPRESS s.r.o.
+  [3/10] IČO: 26168685 ✅ Seznam.cz, a.s.
+  [4/10] IČO: 26471531 ✅ Společenství vlastníků Prokopa Velikého 
+  [5/10] IČO: 26704269 ✅ Orbium Reality s.r.o.
+  [6/10] IČO: 26714248 ❌ Not found
+  [7/10] IČO: 26760185 ✅ Společenství vlastníků jednotek objektu 
+  [8/10] IČO: 26788144 ✅ Společenství vlastníků jednotek v domě č
+  [9/10] IČO: 26857928 ✅ Erwin Quarder CZ s.r.o.
+  [10/10] IČO: 26916576 ⏭️  Already exists, skipping
+
+  💾 Importing 8 companies to Supabase...
+  ✅ Successfully imported 8 companies
+
+📦 BATCH 4/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 27074358 ⏭️  Already exists, skipping
+  [2/10] IČO: 27082440 ⏭️  Already exists, skipping
+  [3/10] IČO: 27232433 ✅ ČEZ Prodej, a.s.
+  [4/10] IČO: 27406903 ❌ Not found
+  [5/10] IČO: 27597041 ❌ Not found
+  [6/10] IČO: 27597687 ❌ Not found
+  [7/10] IČO: 27641988 ✅ Exclusive Yachts s.r.o.
+  [8/10] IČO: 27653170 ✅ YIN LONG s.r.o.
+  [9/10] IČO: 27661431 ✅ DŘEVOSTAVBA s.r.o. v likvidaci
+  [10/10] IČO: 27990915 ❌ Not found
+
+  💾 Importing 4 companies to Supabase...
+  ✅ Successfully imported 4 companies
+
+📦 BATCH 5/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 28556093 ❌ Not found
+  [2/10] IČO: 44012373 ✅ Albert Česká republika, s.r.o.
+  [3/10] IČO: 45244782 ✅ Česká spořitelna, a.s.
+  [4/10] IČO: 45272271 ✅ Interhotel Olympik, a.s.
+  [5/10] IČO: 45272352 ✅ HAKE INTERNATIONAL TRADING, spol. s r.o.
+  [6/10] IČO: 45272956 ✅ Generali Česká pojišťovna a.s.
+  [7/10] IČO: 45274649 ⏭️  Already exists, skipping
+  [8/10] IČO: 45534276 ✅ VEBA, textilní závody a.s.
+  [9/10] IČO: 45797072 ❌ Not found
+  [10/10] IČO: 47114983 ✅ Česká pošta, s.p.
+
+  💾 Importing 7 companies to Supabase...
+  ✅ Successfully imported 7 companies
+
+📦 BATCH 6/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 47115378 ✅ J&T BANKA, a.s.
+  [2/10] IČO: 47672684 ✅ J&T INVESTIČNÍ SPOLEČNOST, a.s.
+  [3/10] IČO: 48035599 ✅ SWIETELSKY stavební s.r.o.
+  [4/10] IČO: 48109304 ❌ Not found
+  [5/10] IČO: 48265993 ✅ SALICA s.r.o.
+  [6/10] IČO: 49240480 ✅ UNIQA pojišťovna, a.s.
+  [7/10] IČO: 49240714 ❌ Not found
+  [8/10] IČO: 49240722 ✅ FWDS Research, a.s.
+  [9/10] IČO: 49240901 ✅ Raiffeisenbank a.s.
+  [10/10] IČO: 49685490 ✅ ENETIQA a.s.
+
+  💾 Importing 8 companies to Supabase...
+  ✅ Successfully imported 8 companies
+
+📦 BATCH 7/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 60193336 ⏭️  Already exists, skipping
+  [2/10] IČO: 60193468 ✅ MERO ČR, a.s.
+  [3/10] IČO: 60193530 ❌ Not found
+  [4/10] IČO: 60193913 ✅ Pražská energetika, a.s.
+  [5/10] IČO: 60459824 ✅ MUDR.MICHAL BEDNÁŘ-CHIRURGICKÁ PRAXE
+  [6/10] IČO: 63080478 ✅ STÚ - K a.s.
+  [7/10] IČO: 63473291 ✅ Globus ČR, v.o.s.
+  [8/10] IČO: 63998289 ❌ Not found
+  [9/10] IČO: 70994226 ⏭️  Already exists, skipping
+  [10/10] IČO: 88949745 ❌ Not found
+
+  💾 Importing 5 companies to Supabase...
+  ✅ Successfully imported 5 companies
+
+============================================================
+📊 FINAL SUMMARY
+============================================================
+Total processed:  70
+Successfully scraped: 44
+Successfully imported: 44
+Skipped (existing): 10
+Failed: 16
+============================================================

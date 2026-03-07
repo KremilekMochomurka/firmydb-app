@@ -1,0 +1,25 @@
+# Target: 200+ Czech B2B Companies (Praha, Brno, Major Cities)
+# Focus: Tech, Manufacturing, Services, Finance
+
+# Already imported (skip these - 54 companies)
+# Will add 150+ new ones
+
+# Tech & Software (Praha) - 30 companies
+26168685  # Seznam.cz
+27082440  # Alza.cz
+03480712  # Rohlik Group
+02795281  # Mall.cz
+24291943  # Notino
+28556093  # Y Soft
+27074358  # Asseco CE
+63080478  # Avast Software
+25788001  # Gooddata
+27653170  # Rossum.ai
+04854721  # Productboard
+88949745  # Cognitive Security
+06726828  # Blindspot Solutions
+27597041  # Bohemia Interactive
+26168685  # Cleverlance
+63473819  # Socialbakers (Emplifi)
+45797072  # JetBrains
+24290080  # PB

@@ -1,0 +1,151 @@
+🚀 FirmyDB Batch Import to Supabase
+============================================================
+📋 Loaded 70 IČO numbers
+
+📦 BATCH 1/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 00000001 ❌ Not found
+  [2/10] IČO: 00000205  ❌ Error scraping 00000205: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 00001279 ⏭️  Already exists, skipping
+  [4/10] IČO: 00010669  ❌ Error scraping 00010669: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [5/10] IČO: 00014915  ❌ Error scraping 00014915: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [6/10] IČO: 00023817  ❌ Error scraping 00023817: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [7/10] IČO: 00177041 ⏭️  Already exists, skipping
+  [8/10] IČO: 00543543  ❌ Error scraping 00543543: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 02795281 ⏭️  Already exists, skipping
+  [10/10] IČO: 03480712  ❌ Error scraping 03480712: sequence item 1: expected str instance, int found
+ ❌ Not found
+
+📦 BATCH 2/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 03974537 ❌ Not found
+  [2/10] IČO: 04854721  ❌ Error scraping 04854721: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 05346037  ❌ Error scraping 05346037: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [4/10] IČO: 06726828  ❌ Error scraping 06726828: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [5/10] IČO: 15890449 ❌ Not found
+  [6/10] IČO: 15890856  ❌ Error scraping 15890856: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [7/10] IČO: 18623638 ❌ Not found
+  [8/10] IČO: 24291943  ❌ Error scraping 24291943: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 25656635  ❌ Error scraping 25656635: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [10/10] IČO: 25672720 ⏭️  Already exists, skipping
+
+📦 BATCH 3/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 25788001  ❌ Error scraping 25788001: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [2/10] IČO: 26138433  ❌ Error scraping 26138433: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 26168685  ❌ Error scraping 26168685: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [4/10] IČO: 26471531  ❌ Error scraping 26471531: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [5/10] IČO: 26704269  ❌ Error scraping 26704269: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [6/10] IČO: 26714248 ❌ Not found
+  [7/10] IČO: 26760185  ❌ Error scraping 26760185: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [8/10] IČO: 26788144  ❌ Error scraping 26788144: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 26857928  ❌ Error scraping 26857928: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [10/10] IČO: 26916576 ✅ VACEUM s.r.o.
+
+  💾 Importing 1 companies to Supabase...
+  ✅ Successfully imported 1 companies
+
+📦 BATCH 4/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 27074358 ⏭️  Already exists, skipping
+  [2/10] IČO: 27082440 ⏭️  Already exists, skipping
+  [3/10] IČO: 27232433  ❌ Error scraping 27232433: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [4/10] IČO: 27406903 ❌ Not found
+  [5/10] IČO: 27597041 ❌ Not found
+  [6/10] IČO: 27597687 ❌ Not found
+  [7/10] IČO: 27641988  ❌ Error scraping 27641988: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [8/10] IČO: 27653170  ❌ Error scraping 27653170: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 27661431  ❌ Error scraping 27661431: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [10/10] IČO: 27990915 ❌ Not found
+
+📦 BATCH 5/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 28556093 ❌ Not found
+  [2/10] IČO: 44012373  ❌ Error scraping 44012373: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 45244782  ❌ Error scraping 45244782: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [4/10] IČO: 45272271  ❌ Error scraping 45272271: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [5/10] IČO: 45272352  ❌ Error scraping 45272352: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [6/10] IČO: 45272956  ❌ Error scraping 45272956: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [7/10] IČO: 45274649 ⏭️  Already exists, skipping
+  [8/10] IČO: 45534276  ❌ Error scraping 45534276: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 45797072 ❌ Not found
+  [10/10] IČO: 47114983  ❌ Error scraping 47114983: sequence item 1: expected str instance, int found
+ ❌ Not found
+
+📦 BATCH 6/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 47115378  ❌ Error scraping 47115378: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [2/10] IČO: 47672684  ❌ Error scraping 47672684: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 48035599  ❌ Error scraping 48035599: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [4/10] IČO: 48109304 ❌ Not found
+  [5/10] IČO: 48265993  ❌ Error scraping 48265993: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [6/10] IČO: 49240480  ❌ Error scraping 49240480: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [7/10] IČO: 49240714 ❌ Not found
+  [8/10] IČO: 49240722  ❌ Error scraping 49240722: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [9/10] IČO: 49240901  ❌ Error scraping 49240901: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [10/10] IČO: 49685490  ❌ Error scraping 49685490: sequence item 1: expected str instance, int found
+ ❌ Not found
+
+📦 BATCH 7/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 60193336 ⏭️  Already exists, skipping
+  [2/10] IČO: 60193468  ❌ Error scraping 60193468: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [3/10] IČO: 60193530 ❌ Not found
+  [4/10] IČO: 60193913  ❌ Error scraping 60193913: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [5/10] IČO: 60459824  ❌ Error scraping 60459824: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [6/10] IČO: 63080478  ❌ Error scraping 63080478: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [7/10] IČO: 63473291  ❌ Error scraping 63473291: sequence item 1: expected str instance, int found
+ ❌ Not found
+  [8/10] IČO: 63998289 ❌ Not found
+  [9/10] IČO: 70994226 ⏭️  Already exists, skipping
+  [10/10] IČO: 88949745 ❌ Not found
+
+============================================================
+📊 FINAL SUMMARY
+============================================================
+Total processed:  70
+Successfully scraped: 1
+Successfully imported: 1
+Skipped (existing): 9
+Failed: 60
+============================================================

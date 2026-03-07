@@ -1,0 +1,107 @@
+🚀 FirmyDB Batch Import to Supabase
+============================================================
+📋 Loaded 70 IČO numbers
+
+📦 BATCH 1/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 00000001 ❌ Not found
+  [2/10] IČO: 00000205  ❌ Error scraping 00000205: 'str' object has no attribute 'get'
+ ❌ Not found
+  [3/10] IČO: 00001279 ⏭️  Already exists, skipping
+  [4/10] IČO: 00010669  ❌ Error scraping 00010669: 'str' object has no attribute 'get'
+ ❌ Not found
+  [5/10] IČO: 00014915  ❌ Error scraping 00014915: 'str' object has no attribute 'get'
+ ❌ Not found
+  [6/10] IČO: 00023817  ❌ Error scraping 00023817: 'str' object has no attribute 'get'
+ ❌ Not found
+  [7/10] IČO: 00177041 ⏭️  Already exists, skipping
+  [8/10] IČO: 00543543  ❌ Error scraping 00543543: 'str' object has no attribute 'get'
+ ❌ Not found
+  [9/10] IČO: 02795281 ⏭️  Already exists, skipping
+  [10/10] IČO: 03480712  ❌ Error scraping 03480712: 'str' object has no attribute 'get'
+ ❌ Not found
+
+📦 BATCH 2/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 03974537 ❌ Not found
+  [2/10] IČO: 04854721  ❌ Error scraping 04854721: 'str' object has no attribute 'get'
+ ❌ Not found
+  [3/10] IČO: 05346037  ❌ Error scraping 05346037: 'str' object has no attribute 'get'
+ ❌ Not found
+  [4/10] IČO: 06726828  ❌ Error scraping 06726828: 'str' object has no attribute 'get'
+ ❌ Not found
+  [5/10] IČO: 15890449 ❌ Not found
+  [6/10] IČO: 15890856  ❌ Error scraping 15890856: 'str' object has no attribute 'get'
+ ❌ Not found
+  [7/10] IČO: 18623638 ❌ Not found
+  [8/10] IČO: 24291943  ❌ Error scraping 24291943: 'str' object has no attribute 'get'
+ ❌ Not found
+  [9/10] IČO: 25656635  ❌ Error scraping 25656635: 'str' object has no attribute 'get'
+ ❌ Not found
+  [10/10] IČO: 25672720 ⏭️  Already exists, skipping
+
+📦 BATCH 3/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 25788001  ❌ Error scraping 25788001: 'str' object has no attribute 'get'
+ ❌ Not found
+  [2/10] IČO: 26138433  ❌ Error scraping 26138433: 'str' object has no attribute 'get'
+ ❌ Not found
+  [3/10] IČO: 26168685  ❌ Error scraping 26168685: 'str' object has no attribute 'get'
+ ❌ Not found
+  [4/10] IČO: 26471531  ❌ Error scraping 26471531: 'str' object has no attribute 'get'
+ ❌ Not found
+  [5/10] IČO: 26704269  ❌ Error scraping 26704269: 'str' object has no attribute 'get'
+ ❌ Not found
+  [6/10] IČO: 26714248 ❌ Not found
+  [7/10] IČO: 26760185  ❌ Error scraping 26760185: 'str' object has no attribute 'get'
+ ❌ Not found
+  [8/10] IČO: 26788144  ❌ Error scraping 26788144: 'str' object has no attribute 'get'
+ ❌ Not found
+  [9/10] IČO: 26857928  ❌ Error scraping 26857928: 'str' object has no attribute 'get'
+ ❌ Not found
+  [10/10] IČO: 26916576  ❌ Error scraping 26916576: 'str' object has no attribute 'get'
+ ❌ Not found
+
+📦 BATCH 4/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 27074358 ⏭️  Already exists, skipping
+  [2/10] IČO: 27082440 ⏭️  Already exists, skipping
+  [3/10] IČO: 27232433  ❌ Error scraping 27232433: 'str' object has no attribute 'get'
+ ❌ Not found
+  [4/10] IČO: 27406903 ❌ Not found
+  [5/10] IČO: 27597041 ❌ Not found
+  [6/10] IČO: 27597687 ❌ Not found
+  [7/10] IČO: 27641988  ❌ Error scraping 27641988: 'str' object has no attribute 'get'
+ ❌ Not found
+  [8/10] IČO: 27653170  ❌ Error scraping 27653170: 'str' object has no attribute 'get'
+ ❌ Not found
+  [9/10] IČO: 27661431  ❌ Error scraping 27661431: 'str' object has no attribute 'get'
+ ❌ Not found
+  [10/10] IČO: 27990915 ❌ Not found
+
+📦 BATCH 5/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 28556093 ❌ Not found
+  [2/10] IČO: 44012373  ❌ Error scraping 44012373: 'str' object has no attribute 'get'
+ ❌ Not found
+  [3/10] IČO: 45244782  ❌ Error scraping 45244782: 'str' object has no attribute 'get'
+ ❌ Not found
+  [4/10] IČO: 45272271  ❌ Error scraping 45272271: 'str' object has no attribute 'get'
+ ❌ Not found
+  [5/10] IČO: 45272352  ❌ Error scraping 45272352: 'str' object has no attribute 'get'
+ ❌ Not found
+  [6/10] IČO: 45272956  ❌ Error scraping 45272956: 'str' object has no attribute 'get'
+ ❌ Not found
+  [7/10] IČO: 45274649 ⏭️  Already exists, skipping
+  [8/10] IČO: 45534276  ❌ Error scraping 45534276: 'str' object has no attribute 'get'
+ ❌ Not found
+  [9/10] IČO: 45797072 ❌ Not found
+  [10/10] IČO: 47114983  ❌ Error scraping 47114983: 'str' object has no attribute 'get'
+ ❌ Not found
+
+📦 BATCH 6/7 (10 companies)
+------------------------------------------------------------
+  [1/10] IČO: 47115378  ❌ Error scraping 47115378: 'str' object has no attribute 'get'
+ ❌ Not found
+  [2/10] IČO: 47672684  ❌ Error scraping 47672684: 'str' object has no attribute 'get'
+ ❌ Not found

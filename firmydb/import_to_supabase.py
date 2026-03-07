@@ -70,23 +70,16 @@ def import_companies(filename: str = 'companies.json'):
     
     for i, company in enumerate(companies, 1):
         try:
-            # Prepare data for insert
+            # Prepare data for insert (match existing schema)
             data = {
                 'ico': company.get('ico'),
                 'name': company.get('name'),
                 'legal_form': company.get('legal_form'),
-                'address': company.get('address'),
                 'city': company.get('city'),
-                'zip_code': str(company.get('zip')) if company.get('zip') else None,
                 'email': company.get('email'),
                 'phone': company.get('phone'),
                 'website': company.get('website'),
                 'founded_date': company.get('founded_date'),
-                'status': company.get('status'),
-                'dic': company.get('dic'),
-                'nace_codes': company.get('nace_codes', []),
-                'quality_score': company.get('quality_score', 0),
-                'source': company.get('source', 'ares'),
             }
             
             # Insert into Supabase

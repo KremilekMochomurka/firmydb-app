@@ -1,0 +1,128 @@
+# Top 100+ Czech B2B Companies (IČO)
+# Tech & IT
+27082440  # Alza.cz a.s.
+25672720  # MONETA Money Bank
+60193336  # O2 Czech Republic
+45274649  # ČEZ a.s.
+00177041  # Škoda Auto
+27074358  # Asseco CE
+63080478  # Avast Software
+28556093  # Y Soft Corporation
+25788001  # Socialbakers (Emplifi)
+26168685  # GoodData
+27990915  # Kiwi.com
+03480712  # Rohlik Group
+02795281  # Mall.cz
+26168685  # JetBrains Czech
+49240480  # AVG Technologies
+
+# Banks & Finance
+00001279  # Česká spořitelna
+47115378  # Raiffeisenbank
+45244782  # UniCredit Bank
+49240901  # Fio banka
+63998289  # Air Bank
+47672684  # Equa bank
+
+# Telecom
+00000001  # T-Mobile Czech Republic
+60193336  # O2 Czech Republic (duplicate check)
+49240714  # Vodafone Czech Republic
+
+# Automotive
+00177041  # Škoda Auto (duplicate)
+00010669  # Tatra Trucks
+48265993  # Iveco Czech Republic
+
+# Manufacturing
+26704269  # Sklo Bohemia
+48035599  # Metrostav
+26714248  # Lasselsberger
+18623638  # AGC Automotive Czech
+49240722  # Preciosa
+27653170  # Jablonex Group
+
+# Retail
+44012373  # IKEA Czech Republic
+47114983  # Lidl Česká republika
+45272271  # Kaufland Česká republika
+26138433  # Tesco Stores ČR
+63473291  # Albert Česká republika
+
+# Pharma & Healthcare
+45272956  # Zentiva
+60193913  # Pliva-Lachema
+00023817  # Teva Czech Industries
+45797072  # Gedeon Richter
+
+# Energy & Utilities
+45274649  # ČEZ (duplicate)
+27232433  # Veolia Energie ČR
+25656635  # Pražská plynárenská
+
+# Transport & Logistics
+70994226  # České dráhy
+60459824  # ČD Cargo
+48109304  # DPD Czech Republic
+26916576  # PPL CZ
+49240480  # Geis
+
+# Construction
+00014915  # Metrostav
+26760185  # Skanska
+00543543  # PSJ
+27406903  # OHL ŽS
+
+# Real Estate
+27597041  # CPI Property Group
+26788144  # Passerinvest Group
+45272352  # Penta Real Estate
+
+# Media & Publishing
+45274649  # Economia
+26168685  # Czech News Center
+15890856  # MAFRA
+
+# Food & Beverage
+60193530  # Nestlé Česko
+00000001  # Coca-Cola HBC Česká republika
+45534276  # Danone
+27661431  # Plzeňský Prazdroj
+49240901  # Budějovický Budvar
+60193468  # Madeta
+
+# Tourism & Hospitality
+26857928  # Czech Airlines
+45274649  # Invia.cz
+27597687  # Blue Style (hotel operator)
+
+# Professional Services
+00000205  # Deloitte Czech Republic
+26471531  # PwC Czech Republic
+15890449  # KPMG Česká republika
+27232433  # EY Czech Republic
+45272956  # McKinsey & Company Czech
+49685490  # BCG Prague
+
+# Additional Tech/Startups
+03974537  # Apify
+04854721  # Productboard
+05346037  # Geneea
+27653170  # Rossum
+88949745  # Cognitive Security (defunct)
+06726828  # Blindspot Solutions
+
+# E-commerce
+27082440  # Alza (duplicate)
+02795281  # Mall.cz (duplicate)
+03480712  # Rohlik (duplicate)
+24291943  # Notino
+27641988  # Heureka Shopping
+28556093  # Slevomat (Groupon CZ)
+
+# More B2B Services
+26168685  # Cleverlance Enterprise Solutions
+49240480  # Tieto Czech
+27232433  # Ness Technologies
+45272956  # AMI Praha
+27597041  # Bohemia Interactive
